@@ -15,7 +15,7 @@ class Genre(models.Model):
         return self.name
     
     def get_absolute_url(self):
-        return reverse('genre=default', args=[str(self.id)])
+        return reverse('genre-default', args=[str(self.id)])
     
     class Meta:
         constraints = [
@@ -26,6 +26,21 @@ class Genre(models.Model):
             ),
         ]
 
+class Language(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name  
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                Lower('name'),
+                name='language_name_case_insensitive_unique',
+                violation_error_message = "Language already exists (case insensitive match)"
+            ),
+        ]
+
 class Book(models.Model):
     title = models.CharField(max_length=200)
     author = models.ForeignKey('Author', on_delete=models.RESTRICT, null=True)
@@ -33,6 +48,12 @@ class Book(models.Model):
     isbn = models.CharField('ISBN', max_length=13, unique=True, help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn'
                                       '">ISBN number</a>')
     genre = models.ManyToManyField(Genre, help_text='Select a genre for this book')
+    language = models.ForeignKey('Language', help_text='Select a language for this book', on_delete=models.RESTRICT, default=1)
+
+    def display_genre(self):
+        return ', '.join(genre.name for genre in self.genre.all()[:3])
+
+    display_genre.short_description = 'Genre'
 
     def __str__(self):
         return self.title
@@ -40,7 +61,7 @@ class Book(models.Model):
     def get_absolute_url(self):
         return reverse('bool-detail', args=[str(self.id)])
     
-class bookInstance(models.Model):
+class BookInstance(models.Model):
     LOAN_STATUS = (
         ('m', 'Maintenance'),
         ('o', 'On loan'),
