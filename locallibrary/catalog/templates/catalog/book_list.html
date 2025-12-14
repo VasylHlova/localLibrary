@@ -1,4 +1,4 @@
-{% extends 'base_generic.htmlw' %}
+{% extends 'base_generic.html' %}
 
 {% block content %}
     <h1>Book list</h1>
@@ -9,7 +9,7 @@
                     <a href="{{ book.get_absolute_url }}">{{ book.title }}</a>
                     ({{book.author}})
                 </li>
-            {{% endfor %}}
+            {% endfor %}
         </ul>
     {% else %}
         <p>There are no books in the library.</p>

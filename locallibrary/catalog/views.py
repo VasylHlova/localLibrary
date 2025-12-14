@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views.generic import ListView, DetailView
 from .models import Book, Author, BookInstance, Genre, Language
 
+
 def index(request):
 
     num_books = Book.objects.all().count()
@@ -29,4 +30,10 @@ class BookListView(ListView):
 class AuthorListView(ListView):
 
     model = Author
-    paginate_by = 10    
+    paginate_by = 10
+
+class BookDetailView(DetailView):
+    model = Book
+
+class AuthorDetailView(DetailView):
+    model = Author
