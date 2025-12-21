@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-  <h1>Title: {{ author.first_name }} {{author.last_name}}</h1>
+  <h1>{{ author.first_name }} {{author.last_name}}</h1>
 
   <p>{{author.date_of_birth}} - {% if author.date_of_deth %} {{author.date_of_death}} {% endif %}</p>
 

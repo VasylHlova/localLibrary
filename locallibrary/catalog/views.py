@@ -105,7 +105,7 @@ def renew_book_librarian(request, pk):
 
 class AuthorCreate(PermissionRequiredMixin, CreateView):
     model = Author
-    fields = ['first_naem', 'last_name', 'date_of_birth', 'date_of_death',]
+    fields = ['first_name', 'last_name', 'date_of_birth', 'date_of_death',]
     initial = {'date_of_birth': '31.12.2020'}
     permission_required = 'catalog.add_author'
     
@@ -126,4 +126,28 @@ class AuthorDelete(PermissionRequiredMixin, DeleteView):
         except Exception as e:
             return HttpResponseRedirect(
                 reverse('author-delete', kwargs={'pk':self.object.pk})
+            )
+        
+class BookCreate(PermissionRequiredMixin, CreateView):
+    model = Book
+    fields = ['title', 'author', 'summary', 'isbn', 'language', 'genre']
+    permission_required = 'catalog.create_book'
+
+class BookUpdate(PermissionRequiredMixin, UpdateView):
+    model = Book
+    fields = '__all__'
+    permission_required = 'catalog.update_book'
+
+class BookDelete(PermissionRequiredMixin, DeleteView):
+    model = Book
+    success_url = reverse_lazy('books')
+    permission_required = 'catalog.delete_book'
+
+    def form_valid(self, form):
+        try:
+            self.object.delete()
+            return HttpResponseRedirect(self.success_url)
+        except Exception as e:
+            return HttpResponseRedirect(
+                reverse('book-delete', kwargs={'pk': self.object.pk})
             )
