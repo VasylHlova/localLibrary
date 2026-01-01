@@ -1,0 +1,22 @@
+{% load allauth %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <h2 class="card-title h5 mb-3">
+            {% slot title %}
+            {% endslot %}
+        </h2>
+        
+        <div class="card-text">
+            {% slot body %}
+            {% endslot %}
+        </div>
+
+        {% if slots.actions %}
+            <div class="mt-3 d-flex gap-2">
+                {% for action in slots.actions %}
+                    {{ action }}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>

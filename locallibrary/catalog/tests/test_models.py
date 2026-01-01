@@ -3,9 +3,9 @@ from django.test import TestCase
 from catalog.models import Author
 
 class AuthorModelTest(TestCase):
+
     @classmethod
     def setUpTestData(cls):
-        # Set up non-modified objects used by all test methods
         Author.objects.create(first_name='Big', last_name='Bob')
 
     def test_first_name_label(self):
@@ -30,5 +30,4 @@ class AuthorModelTest(TestCase):
 
     def test_get_absolute_url(self):
         author = Author.objects.get(id=1)
-        # This will also fail if the URLConf is not defined.
         self.assertEqual(author.get_absolute_url(), '/catalog/author/1')

@@ -1,0 +1,11 @@
+{% load allauth %}
+<li class="mb-2" style="list-style: none;">
+    <a class="btn btn-outline-dark w-100 text-start d-flex align-items-center justify-content-center gap-2"
+       title="{{ attrs.name }}"
+       href="{{ attrs.href }}">
+       
+        <i class="fa-brands fa-{{ attrs.provider_id }} fa-lg"></i>
+        
+        <span>{{ attrs.name }}</span>
+    </a>
+</li>

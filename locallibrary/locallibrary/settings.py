@@ -41,7 +41,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'catalog.apps.CatalogConfig',
+    'user.apps.UserConfig',
+    'django.contrib.sites',
+    'crispy_forms',
+    'crispy_bootstrap5',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.github',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -51,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware'
 ]
 
 ROOT_URLCONF = 'locallibrary.urls'
@@ -124,6 +136,66 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-LOGIN_REDIRECT_URL = '/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP':{
+            'client_id': '286709041588-omohggkbrb2ualn6qbqhusfvp01i8uml.apps.googleusercontent.com',
+            'secret': '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',
+            'key': '',
+        },
+        'SCOPE':[
+            'profile',
+            'email',
+        ]
+    },
+    'github': {
+        'APP':{
+            'client_id': 'Ov23limCHnT39fEqyYVr',
+            'secret': 'ee75af4124791a5f33a95de6c6cb34241dd1c188',
+            'key': '',
+        },
+        'SCOPE':[
+            'user',
+            'repo',
+            'read:org',
+        ]
+    },
+}
+
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+
+LOGIN_REDIRECT_URL = 'index'
+LOGOUT_REDIRECT_URL = 'index'
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_UNIQUE_EMAIL = True
+
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_BY_CODE_ENABLED = False
+
+
+ACCOUNT_SIGNUP_FIELDS = [
+    'email*', 
+    'first_name', 
+    'last_name',
+    'password1' 
+]
+
+SOCIALACCOUNT_ADAPTER = 'user.adapters.MySocialAccountAdapter'
+
+AUTH_USER_MODEL = 'user.CustomUser'
+
+ACCOUNT_SIGNUP_FORM_CLASS = 'user.forms.CustomSignupForm'
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"

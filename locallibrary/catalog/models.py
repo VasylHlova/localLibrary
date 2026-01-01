@@ -2,6 +2,7 @@ from django.db import models
 from django.urls import reverse
 from django.db.models import UniqueConstraint
 from django.db.models.functions import Lower
+from django.core.exceptions import ValidationError
 from django.conf import settings
 import uuid
 from datetime import date
@@ -104,3 +105,11 @@ class Author(models.Model):
 
     def __str__(self):
         return f'{self.last_name}, {self.first_name}'
+    
+    def clean(self):
+        
+        super.clean()
+
+        if self.date_of_death and self.date_of_birth:
+            if self.date_of_birth < self.date_of_death:
+                raise ValidationError("Author could not die erlir then was born!!!")
