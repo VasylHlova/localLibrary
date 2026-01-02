@@ -51,7 +51,6 @@ class Book(models.Model):
     isbn = models.CharField('ISBN', max_length=13, unique=True, help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn'
                                       '">ISBN number</a>')
     genre = models.ManyToManyField(Genre, help_text='Select a genre for this book')
-    language = models.ForeignKey('Language', help_text='Select a language for this book', on_delete=models.RESTRICT, default=1)
 
     def display_genre(self):
         return ', '.join(genre.name for genre in self.genre.all()[:3])
@@ -74,9 +73,10 @@ class BookInstance(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, help_text='Unique ID for this particular book across whole library')
     book = models.ForeignKey('Book', on_delete=models.RESTRICT, null=True)
+    language = models.ForeignKey('Language', help_text='Select a language for this book', on_delete=models.RESTRICT, default=1)
     imprint = models.CharField(max_length=200)
-    due_back = models.DateField(null=True, blank=True)
-    status = models.CharField(choices=LOAN_STATUS, max_length=1, blank=True, default='m', help_text='Book availability')
+    due_back = models.DateField(null=True, blank=True, help_text='Date when book should become avaliable')
+    status = models.CharField(choices=LOAN_STATUS, max_length=1, default='m', help_text='Book availability')
 
     borrower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -84,6 +84,14 @@ class BookInstance(models.Model):
     @property
     def is_overdue(self):
         return bool(self.due_back and date.today() > self.due_back)
+    
+    def clean(self):
+        super().clean()
+
+        if self.status == 'o' or self.status == 'r':
+            if not self.due_back:
+                raise ValidationError("Invalid due back date") 
+            
     class Meta:
         ordering = ['due_back']
         permissions = (("can_mark_returned", "Set book as returned"),)
@@ -104,12 +112,12 @@ class Author(models.Model):
         return reverse('author-detail', args=[str(self.id)])
 
     def __str__(self):
-        return f'{self.last_name}, {self.first_name}'
+        return f'{self.first_name} {self.last_name}'
     
     def clean(self):
         
-        super.clean()
+        super().clean()
 
         if self.date_of_death and self.date_of_birth:
-            if self.date_of_birth < self.date_of_death:
+            if self.date_of_birth > self.date_of_death:
                 raise ValidationError("Author could not die erlir then was born!!!")

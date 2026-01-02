@@ -1,15 +1,16 @@
 import datetime
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required, permission_required
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.contrib import messages
 
 from .models import Book, Author, BookInstance, Genre, Language
-from .forms  import RenewBookForm
+from .forms  import RenewBookForm,  BorrowOrReserveBookForm
 
 def index(request):
 
@@ -130,7 +131,7 @@ class AuthorDelete(PermissionRequiredMixin, DeleteView):
         
 class BookCreate(PermissionRequiredMixin, CreateView):
     model = Book
-    fields = ['title', 'author', 'summary', 'isbn', 'language', 'genre']
+    fields = ['title', 'author', 'summary', 'isbn', 'genre']
     permission_required = 'catalog.create_book'
 
 class BookUpdate(PermissionRequiredMixin, UpdateView):
@@ -151,3 +152,36 @@ class BookDelete(PermissionRequiredMixin, DeleteView):
             return HttpResponseRedirect(
                 reverse('book-delete', kwargs={'pk': self.object.pk})
             )
+        
+class BorrowOrReserveBook(LoginRequiredMixin, UpdateView):
+
+    model = BookInstance
+    form_class = BorrowOrReserveBookForm
+    
+
+    def dispatch(self, request, *args, **kwargs):
+
+        book_inst = self.get_object()
+
+        if book_inst.status != 'a':
+            messages.error(request, 'This instance is not avaliable!')
+            return redirect('book-detail', pk=book_inst.book.id)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    
+    def form_valid(self, form):
+
+        form.instance.borrower = self.request.user
+
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('my-borrowed')
+
+class ChangeBookStatus(PermissionRequiredMixin, UpdateView):
+    model = BookInstance
+    fields = {'status'}
+    permission_required = ['catalog.can_mark_returned', 'catalog.update_bookinstance']
+    template_name = 'catalog/book_change_status.html'
+    success_url = reverse_lazy('all-borrowed')

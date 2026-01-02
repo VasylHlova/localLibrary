@@ -23,7 +23,7 @@
             
             {% if 'sm' in attrs.tags %}btn-sm{% endif %}
             {% if 'lg' in attrs.tags %}btn-lg{% endif %}
-            w-auto {{ attrs.class }}" {# w-100 розтягує кнопку на всю ширину #}
+            w-auto {{ attrs.class }}"
             {% if attrs.form %}form="{{ attrs.form }}"{% endif %}
             {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
             {% if attrs.name %}name="{{ attrs.name }}"{% endif %}

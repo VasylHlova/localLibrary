@@ -1,39 +1,40 @@
 {% extends "base_generic.html" %}
 
-{% block sidebar %}
-  {{ block.super }}
-
-  {% if perms.catalog.change_author or perms.catalog.delete_author %}
-  <hr>
-  <ul class="sidebar-nav">
-    {% if perms.catalog.change_author %}
-      <li><a href="{% url 'author-update' author.id %}">Update author</a></li>
-    {% endif %}
-    {% if not author.book_set.all and perms.catalog.delete_author %}
-      <li><a href="{% url 'author-delete' author.id %}">Delete author</a></li>
-    {% endif %}
-    </ul>
-  {% endif %}
-
-{% endblock %}
-
 {% block content %}
-  <h1>{{ author.first_name }} {{author.last_name}}</h1>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h1 class="card-title">{{ author.first_name }} {{ author.last_name }}</h1>
+        <p class="text-muted mb-4">
+            {{ author.date_of_birth }} — 
+            {% if author.date_of_death %}{{ author.date_of_death }}{% else %}Present{% endif %}
+        </p>
+        
+        {% if perms.catalog.change_author or perms.catalog.delete_author %}
+            <div>
+                {% if perms.catalog.change_author %}
+                    <a href="{% url 'author-update' author.id %}" class="btn btn-outline-primary btn-sm me-2">Update Author</a>
+                {% endif %}
+                {% if not author.book_set.all and perms.catalog.delete_author %}
+                    <a href="{% url 'author-delete' author.id %}" class="btn btn-outline-danger btn-sm">Delete Author</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
 
-  <p>{{author.date_of_birth}} - {% if author.date_of_deth %} {{author.date_of_death}} {% endif %}</p>
+<h4 class="mb-3 ps-2 border-start border-4 border-primary">Books by this Author</h4>
 
-
-  <div style="margin-left:20px;margin-top:20px">
-    <h4>Books</h4>
-
+<div class="list-group shadow-sm">
     {% for book in author.book_set.all %}
-      <hr />
-    
-      <p><a href="{{book.get_absolute_url}}">{{book.title}} ({{book.bookinstance_set.all.count}})</a></p>
-      <p>{{book.summary}}</p>
-
-      {%empty%}
-      <p>Author has no books</p>
+    <a href="{{ book.get_absolute_url }}" class="list-group-item list-group-item-action border-0 mb-1 rounded bg-light">
+        <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1 text-primary">{{ book.title }}</h5>
+            <small class="text-muted">{{ book.bookinstance_set.all.count }} copies</small>
+        </div>
+        <p class="mb-1 small text-muted">{{ book.summary|truncatewords:30 }}</p>
+    </a>
+    {% empty %}
+    <div class="alert alert-info">Author has no books listed.</div>
     {% endfor %}
-  </div>
+</div>
 {% endblock %}

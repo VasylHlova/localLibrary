@@ -1,13 +1,24 @@
 {% extends "base_generic.html" %}
-
-{% block content %}
-
-<form action="" method="post">
-    {% csrf_token %}
-    <table>
-    {{ form.as_table }}
-    </table>
-    <input type="submit" value="Submit">
-</form>
+{% load crispy_forms_tags %} {% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-white border-bottom-0 pt-4">
+                <h3 class="mb-0">{% if object %}Edit{% else %}Create{% endif %} Record</h3>
+            </div>
+            <div class="card-body">
+                <form action="" method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary w-auto">Submit</button>
+                        <button type="button" class="btn btn-outline-secondary w-auto" onclick="history.back()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
