@@ -90,7 +90,14 @@ class BookInstance(models.Model):
 
         if self.status == 'o' or self.status == 'r':
             if not self.due_back:
-                raise ValidationError("Invalid due back date") 
+                raise ValidationError("Invalid due back date")
+
+    def save(self, *args, **kwargs):
+        if self.status == 'a':
+            self.due_back = None
+            self.borrower = None
+
+        super().save(*args, **kwargs) 
             
     class Meta:
         ordering = ['due_back']
@@ -115,9 +122,8 @@ class Author(models.Model):
         return f'{self.first_name} {self.last_name}'
     
     def clean(self):
-        
         super().clean()
 
         if self.date_of_death and self.date_of_birth:
             if self.date_of_birth > self.date_of_death:
-                raise ValidationError("Author could not die erlir then was born!!!")
+                raise ValidationError("Author could not die erlier then was born!!!")
