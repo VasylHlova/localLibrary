@@ -24,18 +24,22 @@
                 {% block sidebar %}
                     <ul class="sidebar-nav">
                         {% if user.is_authenticated%}
-                            {% get_social_accounts user as accounts %}
-
-                            {% if accounts.google %}
-                                {% for account in accounts.google%}
-                                    <img src="{{account.extra_data.picture}}" alt="Google profile picture" class="rounded-circle img-thumbnail" width="80" height="60">
-                                {% endfor %}
-                            {% elif accounts.github%}
-                                {% for account in accounts.github%}
-                                    <img src="{{account.extra_data.avatar_url}}" alt="Github profile picture" class="rounded-circle img-thumbnail" width="80" height="60">
-                                {% endfor %}
+                            {% if user.profile.profile_picture %}
+                                <img src="{{user.prifile.profile_picture}}" alt="User's profile picture" class="rounded-circle img-thumbnail" width="80" height="60">
                             {% else %}
-                            <li><strong>{{user.get_full_name}}</strong></li>
+                                {% get_social_accounts user as accounts %}
+
+                                {% if accounts.google %}
+                                    {% for account in accounts.google%}
+                                        <img src="{{account.extra_data.picture}}" alt="Google profile picture" class="rounded-circle img-thumbnail" width="80" height="60">
+                                    {% endfor %}
+                                {% elif accounts.github%}
+                                    {% for account in accounts.github%}
+                                        <img src="{{account.extra_data.avatar_url}}" alt="Github profile picture" class="rounded-circle img-thumbnail" width="80" height="60">
+                                    {% endfor %}
+                                {% else %}
+                                <li><strong>{{user.get_full_name}}</strong></li>
+                                {% endif %}
                             {% endif %}
                             <hr class="sidebar-nav"/>
                         {% endif %}

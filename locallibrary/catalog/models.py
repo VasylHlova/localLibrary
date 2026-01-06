@@ -51,6 +51,7 @@ class Book(models.Model):
     isbn = models.CharField('ISBN', max_length=13, unique=True, help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn'
                                       '">ISBN number</a>')
     genre = models.ManyToManyField(Genre, help_text='Select a genre for this book')
+    book_photo = models.ImageField(upload_to='books/', blank=True, null=True)
 
     def display_genre(self):
         return ', '.join(genre.name for genre in self.genre.all()[:3])
@@ -111,6 +112,7 @@ class Author(models.Model):
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField('born',null=True, blank=True)
     date_of_death = models.DateField('died', null=True, blank=True)
+    author_photo = models.ImageField(upload_to='authors/', blank=True, null=True)
 
     class Meta:
         ordering = ['last_name', 'first_name']

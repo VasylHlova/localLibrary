@@ -7,7 +7,7 @@
                 <h3 class="mb-0">{% if object %}Edit{% else %}Create{% endif %} Record</h3>
             </div>
             <div class="card-body">
-                <form action="" method="post">
+                <form action="" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     {{ form|crispy }}
                     

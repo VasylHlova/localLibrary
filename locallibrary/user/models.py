@@ -36,6 +36,7 @@ class UserProfile(models.Model):
     role = models.CharField(choices=Role.choices, default=Role.CUSTOMER)
     date_of_birth = models.DateField('born', null=True, blank=True)
     email_verified_at = models.DateField(null=True, blank=True)
+    profile_picture = models.ImageField(upload_to='users/', blank=True, null=True)
 
     @property
     def is_verified(self):
