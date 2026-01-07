@@ -33,7 +33,7 @@ class UserProfile(models.Model):
         CUSTOMER = 'customer', 'клієнт'
 
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
-    role = models.CharField(choices=Role.choices, default=Role.CUSTOMER)
+    role = models.CharField(choices=Role.choices, default=Role.CUSTOMER, max_length=150)
     date_of_birth = models.DateField('born', null=True, blank=True)
     email_verified_at = models.DateField(null=True, blank=True)
     profile_picture = models.ImageField(upload_to='users/', blank=True, null=True)

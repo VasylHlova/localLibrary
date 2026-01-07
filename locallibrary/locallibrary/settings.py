@@ -202,3 +202,30 @@ ACCOUNT_SIGNUP_FORM_CLASS = 'user.forms.CustomSignupForm'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+CLOUDFLARE_R2_BUCKET = os.getenv('CLOUDFLARE_R2_BUCKET')
+CLOUDFLARE_R2_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_ACCESS_KEY')
+CLOUDFLARE_R2_SECRET_KEY = os.getenv('CLOUDFLARE_R2_SECRET_KEY ')
+CLOUDFLARE_R2_BUCKET_ENDPOINT = os.getenv('CLOUDFLARE_R2_BUCKET_ENDPOINT')
+
+CLOUDFLARE_R2_CONFIG_OPTIONS = {
+    'bucket_name': CLOUDFLARE_R2_BUCKET,
+    'access_key': CLOUDFLARE_R2_ACCESS_KEY,
+    'secret_key': CLOUDFLARE_R2_SECRET_KEY,
+    'endpoint_url': CLOUDFLARE_R2_BUCKET_ENDPOINT,
+    'default_acl': 'public-read',
+    'signature_version': 's3v4' 
+}
+
+STORAGES = {
+    "default": {
+        "BACKEND": "helpers.cloudflare.storages.MediaFileStorage",
+        "OPTIONS": helpers.cloudflare.settings.CLOUDFLARE_R2_CONFIG_OPTIONS,
+    },
+    "staticfiles": {
+        "BACKEND": "helpers.cloudflare.storages.StaticFileStorage",
+        "OPTIONS": helpers.cloudflare.settings.CLOUDFLARE_R2_CONFIG_OPTIONS,
+    },
+}
+
+DEFAULT_AUTO_FIELD =  'django.db.models.BigAutoField'
