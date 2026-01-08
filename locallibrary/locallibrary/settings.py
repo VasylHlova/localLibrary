@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
+    'storages',
 ]
 
 SITE_ID = 1
@@ -134,11 +135,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
-
-MEDIA_ROOT = BASE_DIR / 'media'
-MEDIA_URL = '/media/'
-
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -203,29 +199,38 @@ ACCOUNT_SIGNUP_FORM_CLASS = 'user.forms.CustomSignupForm'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-CLOUDFLARE_R2_BUCKET = os.getenv('CLOUDFLARE_R2_BUCKET')
-CLOUDFLARE_R2_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_ACCESS_KEY')
-CLOUDFLARE_R2_SECRET_KEY = os.getenv('CLOUDFLARE_R2_SECRET_KEY ')
-CLOUDFLARE_R2_BUCKET_ENDPOINT = os.getenv('CLOUDFLARE_R2_BUCKET_ENDPOINT')
 
-CLOUDFLARE_R2_CONFIG_OPTIONS = {
-    'bucket_name': CLOUDFLARE_R2_BUCKET,
-    'access_key': CLOUDFLARE_R2_ACCESS_KEY,
-    'secret_key': CLOUDFLARE_R2_SECRET_KEY,
-    'endpoint_url': CLOUDFLARE_R2_BUCKET_ENDPOINT,
-    'default_acl': 'public-read',
-    'signature_version': 's3v4' 
-}
+AWS_ACCESS_KEY_ID = os.getenv('CLOUDFLARE_R2_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_SECRET_KEY') 
+AWS_STORAGE_BUCKET_NAME = os.getenv('CLOUDFLARE_R2_BUCKET')
+AWS_S3_ENDPOINT_URL = os.getenv('CLOUDFLARE_R2_BUCKET_ENDPOINT')
+
+
+AWS_S3_SIGNATURE_VERSION = 's3v4' 
+
+
+
+AWS_S3_CUSTOM_DOMAIN = os.getenv('CLOUDFLARE_R2_DOMAIN') 
+
 
 STORAGES = {
     "default": {
-        "BACKEND": "helpers.cloudflare.storages.MediaFileStorage",
-        "OPTIONS": helpers.cloudflare.settings.CLOUDFLARE_R2_CONFIG_OPTIONS,
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "location": "media", 
+        },
     },
     "staticfiles": {
-        "BACKEND": "helpers.cloudflare.storages.StaticFileStorage",
-        "OPTIONS": helpers.cloudflare.settings.CLOUDFLARE_R2_CONFIG_OPTIONS,
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "location": "static", 
+        },
     },
 }
 
-DEFAULT_AUTO_FIELD =  'django.db.models.BigAutoField'
+
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+
+MEDIA_ROOT = BASE_DIR / 'media'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
