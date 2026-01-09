@@ -6,6 +6,9 @@
         <h1 class="display-5">{{ book.title }}</h1>
     </div>
     <div class="card-body">
+
+        <img src="{{ book.book_photo }}" alt="Photo of the book" class="">
+
         <p class="lead text-muted"><strong>Author:</strong> <a href="{% url 'author-detail' book.author.pk %}" class="text-decoration-none">{{ book.author }}</a></p>
         <p><strong>Summary:</strong> {{ book.summary }}</p>
         
