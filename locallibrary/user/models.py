@@ -1,7 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .managers import CustomUserManager
-from allauth.account.models import EmailAddress
+from django.core.validators import FileExtensionValidator
+
+from common.file.utils import GeneratePath, validate_file_size
+from common.file.mixins import ImageProcessingMixin
 
 class CustomUser(AbstractUser):
     email = models.EmailField('email address', unique=True)
@@ -18,7 +21,6 @@ class CustomUser(AbstractUser):
     last_name = models.CharField('last name', max_length=150, blank=False)
 
     USERNAME_FIELD = 'email'
-
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
     objects = CustomUserManager()
@@ -26,23 +28,23 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
-class UserProfile(models.Model):
-
+class UserProfile(ImageProcessingMixin, models.Model):
+    IMAGE_SIZE = (300, 300)
     class Role(models.TextChoices):
         STAFF = 'staff', 'персонал'
         CUSTOMER = 'customer', 'клієнт'
 
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField('user.CustomUser', on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(choices=Role.choices, default=Role.CUSTOMER, max_length=150)
     date_of_birth = models.DateField('born', null=True, blank=True)
-    email_verified_at = models.DateField(null=True, blank=True)
-    profile_picture = models.ImageField(upload_to='users/', blank=True, null=True)
-
-    @property
-    def is_verified(self):
-        if self.user.is_authenticated:
-            return EmailAddress.objects.filter(user=self.user, verified=True).exists()
-        return False
+    profile_picture = models.ImageField(upload_to=GeneratePath('users'), 
+                                        blank=True, null=True, max_length=300, 
+                                        validators=[
+                                            validate_file_size,
+                                            FileExtensionValidator(allowed_extensions=[
+                                                'jpeg', 'png', 'webp', 'jpg', 'svg'
+                                            ], message='Invalid file extension')
+                                            ])
         
     def __str__(self):
         return f'{self.user.username} ({self.role})'

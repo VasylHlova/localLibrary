@@ -106,7 +106,7 @@ def renew_book_librarian(request, pk):
 
 class AuthorCreate(PermissionRequiredMixin, CreateView):
     model = Author
-    fields = ['first_name', 'last_name', 'date_of_birth', 'date_of_death',]
+    fields = ['first_name', 'last_name', 'date_of_birth', 'date_of_death', 'photo']
     initial = {'date_of_birth': '31.12.2020'}
     permission_required = 'catalog.add_author'
     
@@ -131,7 +131,7 @@ class AuthorDelete(PermissionRequiredMixin, DeleteView):
         
 class BookCreate(PermissionRequiredMixin, CreateView):
     model = Book
-    fields = ['title', 'author', 'summary', 'isbn', 'genre']
+    fields = ['title', 'author', 'summary', 'isbn', 'genre', 'photo']
     permission_required = 'catalog.create_book'
 
 class BookUpdate(PermissionRequiredMixin, UpdateView):

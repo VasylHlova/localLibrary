@@ -20,10 +20,10 @@
                         {% for bookinst in book.bookinstance_set.all %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <span>{{ bookinst }}</span>
-                                <span class="badge {% if bookinst.status == 'a' %}bg-success
-                                   {% elif bookinst.status == 'm' %}bg-danger
-                                   {% elif bookinst.status == 'o' %}bg-warning text-dark 
-                                   {% elif bookinst.status == 'r' %}bg-info {% endif %} mb-1">
+                                <span class="badge {% if copy.status == copy.InstanceStatus.AVAILABLE %}bg-success
+                                   {% elif copy.status == copy.InstanceStatus.MAINTENANCE %}bg-danger
+                                   {% elif copy.status == copy.InstanceStatus.ON_LOAN %}bg-warning text-dark 
+                                   {% elif copy.status == copy.InstanceStatus.RESERVED %}bg-info {% endif %} mb-1">
                                     {{ bookinst.get_status_display }}
                                 </span>
                             </li>

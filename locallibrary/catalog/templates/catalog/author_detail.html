@@ -1,11 +1,16 @@
 {% extends "base_generic.html" %}
+{% load static %}
 
 {% block content %}
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
         <h1 class="card-title">{{ author.first_name }} {{ author.last_name }}</h1>
 
-        <img src="{{ author.author_photo }}" alt="Author's photo" class="">
+        {% if author.photo %}
+            <img src="{{ author.photo.url }}" alt="{{ author.first_name }}">
+        {% else %}
+            <img src="{% static 'catalog/img/no_photo.png' %}" alt="dafault photo">
+        {% endif %}
 
         <p class="text-muted mb-4">
             {{ author.date_of_birth }} — 

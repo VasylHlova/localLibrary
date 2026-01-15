@@ -1,0 +1,10 @@
+{
+  "python.analysis.typeCheckingMode": "off",
+
+  "python.linting.enabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.linting.mypyArgs": [
+    "--config-file",
+    "mypy.ini"
+  ]
+}

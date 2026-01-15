@@ -1,4 +1,5 @@
 {% extends 'base_generic.html' %}
+{% load static %}
 
 {% block content %}
     <h1 class="mb-4">Author List</h1>
@@ -10,10 +11,14 @@
                 <div class="col">
                     <div class="card bg-light h-100 shadow-sm border-0">
                         <div class="card-body">
+                            {% if author.photo %}
+                                <img src="{{ author.photo.url }}" alt="{{ author.first_name }}" class="img-thumbnail">
+                            {% else %}
+                                <img src="{% static 'catalog/img/no_photo.png' %}" alt="dafault photo" class="img-thumbnail">
+                            {% endif %}
                             <h5 class="card-title text-secondary">
                                 {{ author.first_name }} {{ author.last_name }}
                             </h5>
-                            <img src="{{ author.author_photo }}" alt="Author's photo" class="">
                             <p class="card-text text-muted">
                                 <small>
                                     <strong>Роки життя:</strong><br>
