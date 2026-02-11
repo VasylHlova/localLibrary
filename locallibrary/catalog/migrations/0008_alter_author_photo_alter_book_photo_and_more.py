@@ -15,12 +15,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='author',
             name='photo',
-            field=models.ImageField(blank=True, max_length=300, null=True, upload_to=common.file.utils.GeneratePath('authors'), validators=[common.file.utils.validate_file_size, django.core.validators.FileExtensionValidator(allowed_extensions=['jpeg', 'png', 'webp', 'jpg', 'svg'], message='Invalid file extension')]),
+            field=models.ImageField(blank=True, max_length=300, null=True, upload_to=common.file.utils.GeneratePath('authors'), validators=[common.validators.validate_file_size, django.core.validators.FileExtensionValidator(allowed_extensions=['jpeg', 'png', 'webp', 'jpg', 'svg'], message='Invalid file extension')]),
         ),
         migrations.AlterField(
             model_name='book',
             name='photo',
-            field=models.ImageField(blank=True, max_length=300, null=True, upload_to=common.file.utils.GeneratePath('book'), validators=[common.file.utils.validate_file_size, django.core.validators.FileExtensionValidator(allowed_extensions=['jpeg', 'png', 'webp', 'jpg', 'svg'], message='Invalid file extension')]),
+            field=models.ImageField(blank=True, max_length=300, null=True, upload_to=common.file.utils.GeneratePath('book'), validators=[common.validators.validate_file_size, django.core.validators.FileExtensionValidator(allowed_extensions=['jpeg', 'png', 'webp', 'jpg', 'svg'], message='Invalid file extension')]),
         ),
         migrations.AlterField(
             model_name='bookinstance',

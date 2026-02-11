@@ -10,7 +10,9 @@ import uuid
 from datetime import date
 from typing import Optional, Any
 
-from common.file.utils import validate_file_size, GeneratePath
+from common.file.utils import  GeneratePath
+from common.utils import InstanceStatus, LoanStatus
+from common.validators import validate_file_size
 from common.file.mixins import ImageProcessingMixin
 
 class Genre(models.Model):
@@ -55,7 +57,7 @@ class Language(models.Model):
 class Book(ImageProcessingMixin, models.Model):
     IMAGE_SIZE = (600, 350)
     title = models.CharField(max_length=200)
-    author = models.ForeignKey('catalog.Author', on_delete=models.PROTECT, null=True)
+    author = models.ForeignKey('catalog.Author', on_delete=models.PROTECT, null=True, related_name='books')
     summary = models.TextField(max_length=1000, help_text='Enter a brief description of the book')
     isbn = models.CharField(
         'ISBN', 
@@ -63,12 +65,13 @@ class Book(ImageProcessingMixin, models.Model):
         unique=True, 
         help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>'
     )
-    genre = models.ManyToManyField('catalog.Genre', help_text='Select a genre for this book')
+    genre = models.ManyToManyField('catalog.Genre', help_text='Select a genre for this book', related_name='books')
     language = models.ForeignKey(
         'catalog.Language', 
         help_text='Select a language for this book', 
         on_delete=models.PROTECT, 
-        default=1
+        default=1,
+        related_name='books'
     )
     photo = models.ImageField(
         upload_to=GeneratePath('book'), 
@@ -97,19 +100,12 @@ class Book(ImageProcessingMixin, models.Model):
     
     
 class BookInstance(models.Model):
-
-    class InstanceStatus(models.TextChoices):
-        MAINTENANCE = 'm', 'Maintenance'
-        ON_LOAN = 'o', 'On loan'
-        AVAILABLE = 'a', 'Available'
-        RESERVED = 'r', 'Reserved' 
-
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
         help_text='Unique ID for this particular book across whole library'
     )
-    book = models.ForeignKey('catalog.Book', on_delete=models.PROTECT, null=True)
+    book = models.ForeignKey('catalog.Book', on_delete=models.PROTECT, null=True, related_name='instances')
     imprint = models.CharField(max_length=200)
     due_back = models.DateField(null=True, blank=True, help_text='Date when book should become available')
     status = models.CharField(
@@ -122,14 +118,16 @@ class BookInstance(models.Model):
         settings.AUTH_USER_MODEL, 
         on_delete=models.PROTECT, 
         null=True, 
-        blank=True
+        blank=True,
+        related_name='borrowed_books'
     )
 
     class Meta:
         ordering = ['due_back']
         permissions = (("can_mark_returned", "Set book as returned"),)
         indexes= [
-            models.Index(fields=['borrower', 'status', 'book'])
+            models.Index(fields=['borrower']),
+            models.Index(fields=['book'])
         ]
 
     @property
@@ -145,7 +143,7 @@ class BookInstance(models.Model):
     
     def clean(self) -> None:
         super().clean()
-        if self.status in (self.InstanceStatus.ON_LOAN, self.InstanceStatus.RESERVED):
+        if self.status in (InstanceStatus.ON_LOAN, InstanceStatus.RESERVED):
             if not self.due_back:
                 raise ValidationError("Invalid due back date")
             
@@ -153,7 +151,7 @@ class BookInstance(models.Model):
         is_creating = self._state.adding
         old_status: Optional[str] = getattr(self, '_loaded_status', None)
         
-        if self.status == self.InstanceStatus.AVAILABLE:
+        if self.status == InstanceStatus.AVAILABLE:
             self.due_back = None
             self.borrower = None
 
@@ -168,15 +166,15 @@ class BookInstance(models.Model):
         current_status = self.status
         previous_status = old_status
 
-        if is_creating and current_status == self.InstanceStatus.ON_LOAN:
+        if is_creating and current_status == InstanceStatus.ON_LOAN:
             self._create_loan_record()
             return
 
         if not is_creating and current_status != previous_status:
-            if previous_status == self.InstanceStatus.ON_LOAN:
+            if previous_status == InstanceStatus.ON_LOAN:
                 self._close_active_loan()
 
-            if current_status == self.InstanceStatus.ON_LOAN:
+            if current_status == InstanceStatus.ON_LOAN:
                 self._create_loan_record()
 
     def _create_loan_record(self) -> None:
@@ -185,7 +183,7 @@ class BookInstance(models.Model):
                 book_instance=self,
                 borrower=self.borrower,
                 due_back=self.due_back,
-                status=Loan.LoanStatus.ACTIVE
+                status=LoanStatus.ACTIVE
             )
 
     def _close_active_loan(self) -> None:
@@ -201,7 +199,7 @@ class BookInstance(models.Model):
                 active_loan.is_overdue = True
                 active_loan.overdue_days = (date.today() - stored_due_back).days
 
-            active_loan.status = Loan.LoanStatus.RETURNED
+            active_loan.status = LoanStatus.RETURNED
             active_loan.returned_at = date.today()
             active_loan.save()
             
@@ -210,7 +208,7 @@ class BookInstance(models.Model):
         return f'{self.id} ({book_title})'
     
 
-class Author(models.Model):
+class Author(ImageProcessingMixin, models.Model):
     IMAGE_SIZE = (500, 400)
 
     first_name = models.CharField(max_length=100)
@@ -244,14 +242,9 @@ class Author(models.Model):
         super().clean()
         if self.date_of_death and self.date_of_birth:
             if self.date_of_birth > self.date_of_death:
-                raise ValidationError("Author could not die earlier than they were born!")
+                raise ValidationError("Author could not die earlier than was born!")
             
 class Loan(models.Model):
-
-    class LoanStatus(models.TextChoices):
-        ACTIVE = 'a', 'Active'
-        RETURNED = 'r', 'Returned'
-    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     borrower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='loans')
     book_instance = models.ForeignKey('catalog.BookInstance', on_delete=models.PROTECT, related_name='loans')
@@ -266,5 +259,5 @@ class Loan(models.Model):
 
     class Meta:
         indexes= [
-            models.Index(fields=['borrower', 'status'])
+            models.Index(fields=['borrower',])
         ]

@@ -1,18 +1,22 @@
-import datetime
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseRedirect
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponseRedirect,  HttpRequest, HttpResponse
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, DetailView, FormView
+from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required, permission_required
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.contrib import messages
+from django.db import transaction
+from django.db.models import QuerySet
+from django.forms import Form
 
 from .models import Book, Author, BookInstance, Genre, Language
 from .forms  import RenewBookForm,  BorrowOrReserveBookForm
 
-def index(request):
+import datetime
+from typing import Any
+from uuid import UUID
+
+def index(request:HttpRequest) -> HttpResponse:
 
     num_books = Book.objects.all().count()
     num_instances = BookInstance.objects.all().count()
@@ -37,14 +41,18 @@ def index(request):
     return render(request, 'index.html', context=context)
 
 class BookListView(ListView):
-
     model = Book
     paginate_by = 10
 
-class AuthorListView(ListView):
+    def get_queryset(self):
+        return Book.objects.select_related('author').prefetch_related('genre').all()
 
+class AuthorListView(ListView):
     model = Author
     paginate_by = 10
+
+    def get_queryset(self):
+        return Author.objects.prefetch_related('books').all()[:3]
 
 class BookDetailView(DetailView):
     model = Book
@@ -57,9 +65,10 @@ class LoanBookByUserListView(LoginRequiredMixin, ListView):
     template_name = 'catalog/bookinstance_list_borrowed_user.html'
     paginate_by = 10
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[BookInstance]:
         return (
-            BookInstance.objects.filter(borrower=self.request.user)
+            BookInstance.objects.select_related('book', 'borrower')
+            .filter(borrower=self.request.user)
             .filter(status__exact='o')
             .order_by('due_back')
         )
@@ -70,39 +79,26 @@ class LoanBookListView(PermissionRequiredMixin, ListView):
     permission_required = 'catalog.can_mark_returned', 'catalog.view_bookinstance'
     paginate_by = 10
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[BookInstance]:
         return (
-            BookInstance.objects.filter(status__exact='o')
+            BookInstance.objects.select_related('book', 'borrower')
+            .filter(status__exact='o')
             .order_by('due_back')
         )
     
-@login_required
-@permission_required('catalog.can_mark_returned', raise_exception=True)
-def renew_book_librarian(request, pk):
-    book_instance = get_object_or_404(BookInstance, pk=pk)
+class RenewBookLibrarian(PermissionRequiredMixin, UpdateView):
+    model = BookInstance
+    form = RenewBookForm
+    template_name = 'catalog/book_renew_librarian.html'
+    success_url = reverse_lazy('all-borrowed')
+    permission_required = 'catalog.can_mark_returned'
 
-    if request.method == 'POST':
+    def form_valid(self, form):
+        book_instance = self.object
+        book_instance.due_back = form.cleaned_data['renewal_date']
+        book_instance.save()
 
-        form = RenewBookForm(request.POST)
-
-        if form.is_valid():
-            
-            book_instance.due_back = form.cleaned_data['renewal_date']
-            book_instance.save()
-
-            return HttpResponseRedirect(reverse('all-borrowed'))
-        
-    else:
-        proposed_renewal_date = datetime.date.today() + datetime.timedelta(weeks=3)
-
-        form = RenewBookForm(initial={'renewal_date': proposed_renewal_date})
-
-    context = {
-        'form': form,
-        'book_instance': book_instance,
-    }
-
-    return render(request, 'catalog/book_renew_librarian.html', context)
+        return super().form_valid(form)
 
 class AuthorCreate(PermissionRequiredMixin, CreateView):
     model = Author
@@ -120,7 +116,7 @@ class AuthorDelete(PermissionRequiredMixin, DeleteView):
     success_url = reverse_lazy('authors')
     permission_required = 'catalog.delete_author'
     
-    def form_valid(self, form):
+    def form_valid(self, form:Form) -> HttpResponse:
         try:
             self.object.delete()
             return HttpResponseRedirect(self.success_url)
@@ -144,7 +140,7 @@ class BookDelete(PermissionRequiredMixin, DeleteView):
     success_url = reverse_lazy('books')
     permission_required = 'catalog.delete_book'
 
-    def form_valid(self, form):
+    def form_valid(self, form:Form) -> HttpResponse:
         try:
             self.object.delete()
             return HttpResponseRedirect(self.success_url)
@@ -159,25 +155,24 @@ class BorrowOrReserveBook(LoginRequiredMixin, UpdateView):
     form_class = BorrowOrReserveBookForm
     
 
-    def dispatch(self, request, *args, **kwargs):
-
-        book_inst = self.get_object()
-
-        if book_inst.status != 'a':
-            messages.error(request, 'This instance is not avaliable!')
-            return redirect('book-detail', pk=book_inst.book.id)
-
+    @transaction.atomic
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().dispatch(request, *args, **kwargs)
-
     
-    def form_valid(self, form):
-
+    def get_object(self, queryset=None) -> BookInstance:
+        queryset = self.get_queryset()
+        if self.request.method == 'POST':
+            queryset = queryset.select_for_update()
+        return super().get_object(queryset)
+    
+    def form_valid(self, form: BorrowOrReserveBookForm) -> HttpResponse:
         form.instance.borrower = self.request.user
 
         return super().form_valid(form)
+
     
-    def get_success_url(self):
-        return reverse_lazy('my-borrowed')
+    def get_success_url(self) -> str:
+        return reverse('my-borrowed')
 
 class ChangeBookStatus(PermissionRequiredMixin, UpdateView):
     model = BookInstance

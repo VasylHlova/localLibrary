@@ -1,85 +1,76 @@
-import datetime
-
-
 from  django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from .models import BookInstance
+from common.validators import validate_future_date, validate_term_limit
+from common.utils import InstanceStatus
+
+from typing import Any
 
 class RenewBookForm(forms.Form):
-    renewal_date = forms.DateField(help_text='Enter a date between now and 4 weeks (default 3).')
-
-    def clean_renewal_date(self):
-        data = self.cleaned_data.get('renewal_date')
-
-        if data < datetime.date.today():
-            raise ValidationError(_('Invalid date - renewal in past'))
-
-        if data > datetime.date.today() + datetime.timedelta(weeks=4):
-            raise ValidationError(_('Invalid date - renewal more than 4 weeks ahead'))  
-        
-        return data
+    renewal_date = forms.DateField(help_text='Enter a date between now and 4 weeks (default 3).',
+                                   validators=[validate_future_date, validate_term_limit])
     
-class BorrowOrReserveBookForm(forms.ModelForm):
-        STATUS_CHOISES = (
-                            ('o', 'Borrow'),
-                            ('r', 'Reserve'),
-                        )
-
-        status = forms.ChoiceField(choices=STATUS_CHOISES, label='What do you wish?', widget=forms.RadioSelect)
-
-        class Meta:
-             model = BookInstance
-             fields = ['due_back', 'status']
-
-             widgets = {
-                  'due_back': forms.DateInput(attrs={'placeholder': '1999-12-31'})
-             }
-
-        def clean_due_back(self):
-            data = self.cleaned_data.get('due_back')
-
-            if data < datetime.date.today():
-                raise ValidationError(_('Invalid date - renewal in past'))
-
-            if data > datetime.date.today() + datetime.timedelta(weeks=4):
-                raise ValidationError(_('Invalid date - renewal more than 4 weeks ahead'))  
-            
-            return data
-        
-class ChangeBookStatusForm(forms.ModelForm):
-     
+class BaseBookInstanceForm(forms.ModelForm):
     class Meta:
-         model = BookInstance
-         fields = ['status', 'due_back']
+        model = BookInstance
+        fields = ['status', 'due_back']
 
-    def clean_due_back(self):
-            data = self.cleaned_data.get('due_back')
-            
-            if not data:
-                 return data
+    def __init__(self, *args:Any, **kwargs:Any) -> None:
+        super().__init__(*args, **kwargs)
 
-            if data < datetime.date.today():
-                raise ValidationError(_('Invalid date - renewal in past'))
-
-            if data > datetime.date.today() + datetime.timedelta(weeks=4):
-                raise ValidationError(_('Invalid date - renewal more than 4 weeks ahead'))  
-            
-            return data
+        self.fields['due_back'].validators.append(validate_future_date)
 
     def clean(self):
-         super().clean()
+        cleaned_data = super().clean()
+        
+        status_data = self.cleaned_data.get('status')
+        due_back_data = self.cleaned_data.get('due_back')
+        
+        if status_data and due_back_data:
+            if status_data in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
+                try:
+                    validate_term_limit(due_back_data, status=status_data)
+                except ValidationError as e:
+                    self.add_error('due_back', e)
 
-         status_data = self.cleaned_data['status']
-         due_back_data = self.cleaned_data['due_back']
+        return cleaned_data        
 
-         if status_data  == 'r' or status_data == 'o':
-              if not due_back_data: 
-                   raise ValidationError(_('Date must be defined'))
-         if status_data == 'a':
-              if due_back_data:
-                   raise ValidationError(_('Invalid due back value for this status'))
+class BorrowOrReserveBookForm(BaseBookInstanceForm):
+    STATUS_CHOICES = (
+                        (InstanceStatus.ON_LOAN, 'Borrow'),
+                        (InstanceStatus.RESERVED, 'Reserve'),
+                    )
 
+    status = forms.ChoiceField(choices=STATUS_CHOICES, label='What do you wish?', widget=forms.RadioSelect)
 
+    class Meta(BaseBookInstanceForm.Meta):
+        widgets = {
+            'due_back': forms.DateInput(attrs={'placeholder': '1999-12-31',})
+        }
+    
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+
+        if self.instance.pk:
+            current_status = BookInstance.objects.values_list('status', flat=True).get(pk=self.instance.pk)
+            if current_status and current_status != InstanceStatus.AVAILABLE:
+                raise ValidationError(_('This book is not available!'))
+                            
+        return cleaned_data
+        
+class ChangeBookStatusForm(BaseBookInstanceForm):
+
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+
+        status_data = self.cleaned_data.get('status')
+        due_back_data = self.cleaned_data.get('due_back')
+
+        if status_data == InstanceStatus.AVAILABLE:
+            if due_back_data:
+                self.add_error('due_back', _('Invalid due back value for this status'))
+
+        return cleaned_data
 

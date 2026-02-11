@@ -3,7 +3,8 @@ from django.contrib.auth.models import AbstractUser
 from .managers import CustomUserManager
 from django.core.validators import FileExtensionValidator
 
-from common.file.utils import GeneratePath, validate_file_size
+from common.file.utils import GeneratePath
+from common.validators import validate_file_size
 from common.file.mixins import ImageProcessingMixin
 
 class CustomUser(AbstractUser):
@@ -48,3 +49,4 @@ class UserProfile(ImageProcessingMixin, models.Model):
         
     def __str__(self):
         return f'{self.user.username} ({self.role})'
+    

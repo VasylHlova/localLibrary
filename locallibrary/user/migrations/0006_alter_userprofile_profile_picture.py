@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='userprofile',
             name='profile_picture',
-            field=models.ImageField(blank=True, max_length=300, null=True, upload_to=common.file.utils.GeneratePath('users'), validators=[common.file.utils.validate_file_size, django.core.validators.FileExtensionValidator(allowed_extensions=['jpeg', 'png', 'webp', 'jpg', 'svg'], message='Invalid file extension')]),
+            field=models.ImageField(blank=True, max_length=300, null=True, upload_to=common.file.utils.GeneratePath('users'), validators=[common.validators.validate_file_size, django.core.validators.FileExtensionValidator(allowed_extensions=['jpeg', 'png', 'webp', 'jpg', 'svg'], message='Invalid file extension')]),
         ),
     ]

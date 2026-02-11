@@ -1,9 +1,11 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext_lazy as _
 
+from typing import Any, Optional
+
 class CustomUserManager(BaseUserManager):
     
-    def create_user(self, email, password, **extra_fields):
+    def create_user(self, email:str, password:Optional[str], **extra_fields:Any) -> Any:
         if not email:
             raise ValueError(_('Email must be set'))
         

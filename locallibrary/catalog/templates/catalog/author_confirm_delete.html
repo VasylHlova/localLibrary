@@ -17,10 +17,10 @@
 
                     <p class="text-start mb-2">Delete the following books first:</p>
                     <div class="list-group text-start mb-4 shadow-sm">
-                        {% for book in author.book_set.all %}
+                        {% for book in author.books.all %}
                             <a href="{{ book.get_absolute_url }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                 <span>{{ book }}</span>
-                                <span class="badge bg-primary rounded-pill">{{ book.bookinstance_set.count }} copies</span>
+                                <span class="badge bg-primary rounded-pill">{{ book.instances.count }} copies</span>
                             </a>
                         {% endfor %}
                     </div>

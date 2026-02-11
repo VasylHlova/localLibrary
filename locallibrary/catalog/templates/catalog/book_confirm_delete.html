@@ -17,13 +17,13 @@
 
                     <p class="text-start mb-2">Delete the following copies first:</p>
                     <ul class="list-group text-start mb-4 shadow-sm">
-                        {% for bookinst in book.bookinstance_set.all %}
+                        {% for bookinst in book.bookinstances.all %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <span>{{ bookinst }}</span>
-                                <span class="badge {% if copy.status == copy.InstanceStatus.AVAILABLE %}bg-success
-                                   {% elif copy.status == copy.InstanceStatus.MAINTENANCE %}bg-danger
-                                   {% elif copy.status == copy.InstanceStatus.ON_LOAN %}bg-warning text-dark 
-                                   {% elif copy.status == copy.InstanceStatus.RESERVED %}bg-info {% endif %} mb-1">
+                                <span class="badge {% if copy.status == InstanceStatus.AVAILABLE %}bg-success
+                                   {% elif copy.status == InstanceStatus.MAINTENANCE %}bg-danger
+                                   {% elif copy.status == InstanceStatus.ON_LOAN %}bg-warning text-dark 
+                                   {% elif copy.status == InstanceStatus.RESERVED %}bg-info {% endif %} mb-1">
                                     {{ bookinst.get_status_display }}
                                 </span>
                             </li>

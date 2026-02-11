@@ -47,17 +47,16 @@
         <h4 class="mb-0">Copies</h4>
     </div>
     <ul class="list-group list-group-flush">
-        {% for copy in book.bookinstance_set.all %}
+        {% for copy in book.bookinstances.all %}
         <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap w-50">
             <div>
-                <span class="badge {% if copy.status == copy.InstanceStatus.AVAILABLE %}bg-success
-                                   {% elif copy.status == copy.InstanceStatus.MAINTENANCE %}bg-danger
-                                   {% elif copy.status == copy.InstanceStatus.ON_LOAN %}bg-warning text-dark 
-                                   {% elif copy.status == copy.InstanceStatus.RESERVED %}bg-info {% endif %} mb-1">
+                <span class="badge {% if copy.status == InstanceStatus.AVAILABLE %}bg-success
+                                   {% elif copy.status == InstanceStatus.MAINTENANCE %}bg-danger
+                                   {% elif copy.status == InstanceStatus.ON_LOAN %}bg-warning text-dark 
+                                   {% elif copy.status == InstanceStatus.RESERVED %}bg-info {% endif %} mb-1">
                     {{ copy.get_status_display }}
                 </span>
                 <div class="small text-muted"><strong>Imprint:</strong> {{ copy.imprint }}</div>
-                <div class="small text-muted"><strong>Id:</strong> {{ copy.id }}</div>
             </div>
             
             {% if copy.status != 'a' %}

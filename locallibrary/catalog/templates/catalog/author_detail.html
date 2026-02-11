@@ -33,11 +33,11 @@
 <h4 class="mb-3 ps-2 border-start border-4 border-primary">Books by this Author</h4>
 
 <div class="list-group shadow-sm">
-    {% for book in author.book_set.all %}
+    {% for book in author.books.all %}
     <a href="{{ book.get_absolute_url }}" class="list-group-item list-group-item-action border-0 mb-1 rounded bg-light">
         <div class="d-flex w-100 justify-content-between">
             <h5 class="mb-1 text-primary">{{ book.title }}</h5>
-            <small class="text-muted">{{ book.bookinstance_set.all.count }} copies</small>
+            <small class="text-muted">{{ book.instances.all.count }} copies</small>
         </div>
         <p class="mb-1 small text-muted">{{ book.summary|truncatewords:30 }}</p>
     </a>

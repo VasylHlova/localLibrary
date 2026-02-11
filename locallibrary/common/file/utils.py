@@ -1,19 +1,21 @@
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.utils.deconstruct import deconstructible
+from django.db import models
+from django.core.files.base import File
 
 import os
 import hashlib
 from io import BytesIO
 from PIL import Image, ImageOps
-
+from typing import Tuple, Optional
 
 @deconstructible
 class GeneratePath:
-    def __init__(self, path):
+    def __init__(self, path:str) -> None:
         self.path = path
 
-    def __call__(self, instance, filename):
+    def __call__(self, instance:models.Model, filename:str) -> str:
         hashed_name = hashlib.sha256(filename.encode('utf-8')).hexdigest()
 
         file_ext = '.webp'
@@ -21,13 +23,8 @@ class GeneratePath:
 
         return os.path.join(self.path, new_filename)
 
-def validate_file_size(file):
-    limit = 20 * 1024 * 1024
-
-    if file.size > limit :
-        raise ValidationError('Exceeded max file size(20MB)')
     
-def processing_image(image, max_size=(800, 800)):
+def processing_image(image:File, max_size:Tuple[int,int]=(800, 800)) -> Optional[File]:
     if not image:
         return None
     
