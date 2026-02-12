@@ -24,6 +24,7 @@
                 {% block sidebar %}
                     <ul class="sidebar-nav">
                         {% if user.is_authenticated%}
+                            <a href="{{user.get_absolute_url}}">
                             {% if user.profile.profile_picture %}
                                 <img src="{{user.prifile.profile_picture}}" alt="User's profile picture" class="rounded-circle img-thumbnail" width="80" height="60">
                             {% else %}
@@ -41,6 +42,7 @@
                                 <li><strong>{{user.get_full_name}}</strong></li>
                                 {% endif %}
                             {% endif %}
+                            </a>
                             <hr class="sidebar-nav"/>
                         {% endif %}
                         <li><a href="{% url 'index' %}">Home</a></li>

@@ -47,7 +47,7 @@
         <h4 class="mb-0">Copies</h4>
     </div>
     <ul class="list-group list-group-flush">
-        {% for copy in book.bookinstances.all %}
+        {% for copy in book.instances.all %}
         <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap w-50">
             <div>
                 <span class="badge {% if copy.status == InstanceStatus.AVAILABLE %}bg-success

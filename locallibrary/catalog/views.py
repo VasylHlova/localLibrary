@@ -12,9 +12,8 @@ from django.forms import Form
 from .models import Book, Author, BookInstance, Genre, Language
 from .forms  import RenewBookForm,  BorrowOrReserveBookForm
 
-import datetime
 from typing import Any
-from uuid import UUID
+
 
 def index(request:HttpRequest) -> HttpResponse:
 
@@ -44,14 +43,14 @@ class BookListView(ListView):
     model = Book
     paginate_by = 10
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Book]:
         return Book.objects.select_related('author').prefetch_related('genre').all()
 
 class AuthorListView(ListView):
     model = Author
     paginate_by = 10
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Author]:
         return Author.objects.prefetch_related('books').all()[:3]
 
 class BookDetailView(DetailView):
@@ -93,7 +92,7 @@ class RenewBookLibrarian(PermissionRequiredMixin, UpdateView):
     success_url = reverse_lazy('all-borrowed')
     permission_required = 'catalog.can_mark_returned'
 
-    def form_valid(self, form):
+    def form_valid(self, form:Form) -> HttpResponse:
         book_instance = self.object
         book_instance.due_back = form.cleaned_data['renewal_date']
         book_instance.save()

@@ -10,3 +10,7 @@ class InstanceStatus(models.TextChoices):
 class LoanStatus(models.TextChoices):
     ACTIVE = 'a', _('Active')
     RETURNED = 'r', _('Returned')
+
+class UserRole(models.TextChoices):
+    STAFF = 'staff', _('Staff')
+    CUSTOMER = 'customer', _('Customer')
