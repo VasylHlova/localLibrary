@@ -16,9 +16,9 @@
             </div>
 
             {% if is_owner %}
-                <button class="btn btn-outline-primary btn-sm">
+                <a href="{% url 'profile-edit' pk=user.profile.pk %}" class="btn btn-outline-primary btn-sm" >
                     <i class="bi bi-pencil"></i> Edit Profile
-                </button>
+                </a>
             {% endif %}
         </div>
 

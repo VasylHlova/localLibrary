@@ -1,11 +1,14 @@
-from django.views.generic import DetailView
+from django.views.generic import DetailView, UpdateView
 from django.db.models import QuerySet
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse 
 
 from .models import CustomUser, UserProfile
+from .forms import UpdateUserProfileForm
 
 # Create your views here.
 
-class UserDetail(DetailView):
+class UserDetail(LoginRequiredMixin, DetailView):
     model = CustomUser
     context_object_name = 'user'
 
@@ -18,3 +21,15 @@ class UserDetail(DetailView):
         context['is_owner'] = self.request.user.pk == self.object.pk
 
         return context
+    
+
+class UpdateUserProfile(LoginRequiredMixin, UpdateView):
+    model = UserProfile
+    form_class = UpdateUserProfileForm
+    template_name = 'user/edit_profile.html'
+
+    def get_object(self, queryset=None):
+        return self.request.user.profile
+    
+    def get_success_url(self):
+        return reverse('user-detail', kwargs={'pk': self.request.user.pk})
