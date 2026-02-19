@@ -4,7 +4,6 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.db import transaction
 from django.db.models import QuerySet
 from django.forms import Form
 
@@ -116,7 +115,11 @@ class LoanBookByUserListView(LoginRequiredMixin, VersionedCacheListMixin, ListVi
     model = BookInstance
     template_name = 'catalog/bookinstance_list_borrowed_user.html'
     paginate_by = 10
-    cache_key_prefix = 'user_bookinstance_list'
+
+    def get_cache_prefix(self):
+        base_prefix = super.get_cache_prefix()
+
+        return f'{base_prefix}_user_{self.request.user.id}'
 
     def get_queryset(self) -> QuerySet[BookInstance]:
         return (
@@ -157,8 +160,6 @@ class BorrowOrReserveBook(LoginRequiredMixin, UpdateView):
     model = BookInstance
     form_class = BorrowOrReserveBookForm
     
-
-    @transaction.atomic
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().dispatch(request, *args, **kwargs)
     
