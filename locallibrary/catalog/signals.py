@@ -1,9 +1,11 @@
-from django.db.models.signals import post_delete, pre_save
+from typing import  Any
+
+from django.db.models.signals import post_delete, post_save,  pre_save
 from django.dispatch import receiver
 from django.db import transaction
 from django.db import models
 
-from typing import Type, Any
+from common.utils import increment_model_cache_version
 
 
 @receiver(post_delete, sender='catalog.Author')
@@ -22,4 +24,15 @@ def cleanup_old_photo_on_update(sender: type[models.Model], instance:models.Mode
 
     if old_instance.photo and old_instance.photo != instance.photo:
         transaction.on_commit(lambda: old_instance.photo.delete(save=False))
+
+@receiver([post_delete, post_save], sender='catalog.Author')
+@receiver([post_delete, post_save], sender='catalog.Book')
+@receiver([post_delete, post_save], sender='catalog.BookInstance')
+def invalidate_cache(sender: type[models.Model], instance: models.Model, **kwargs:Any) -> None:
+    model_name = sender._meta.model_name
+
+    increment_model_cache_version(model_name)
+
+
+
 

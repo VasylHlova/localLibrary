@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import BookInstance
 from common.validators import validate_future_date, validate_term_limit
-from common.utils import InstanceStatus
+from common.choices import InstanceStatus
 
 from typing import Any
 

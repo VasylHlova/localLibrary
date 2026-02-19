@@ -1,16 +1,17 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.http import HttpResponseRedirect,  HttpRequest, HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.decorators import login_required, permission_required
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.db import transaction
 from django.db.models import QuerySet
 from django.forms import Form
 
-from .models import Book, Author, BookInstance, Genre, Language
+
+from .models import Book, Author, BookInstance
 from .forms  import RenewBookForm,  BorrowOrReserveBookForm
+from common.utils import VersionedCacheListMixin
 
 from typing import Any
 
@@ -39,66 +40,17 @@ def index(request:HttpRequest) -> HttpResponse:
 
     return render(request, 'index.html', context=context)
 
-class BookListView(ListView):
-    model = Book
-    paginate_by = 10
 
-    def get_queryset(self) -> QuerySet[Book]:
-        return Book.objects.select_related('author').prefetch_related('genre').all()
-
-class AuthorListView(ListView):
+class AuthorListView(VersionedCacheListMixin, ListView):
     model = Author
     paginate_by = 10
 
     def get_queryset(self) -> QuerySet[Author]:
         return Author.objects.prefetch_related('books').all()[:3]
-
-class BookDetailView(DetailView):
-    model = Book
-
+    
 class AuthorDetailView(DetailView):
     model = Author
-
-class LoanBookByUserListView(LoginRequiredMixin, ListView):
-    model = BookInstance
-    template_name = 'catalog/bookinstance_list_borrowed_user.html'
-    paginate_by = 10
-
-    def get_queryset(self) -> QuerySet[BookInstance]:
-        return (
-            BookInstance.objects.select_related('book', 'borrower')
-            .filter(borrower=self.request.user)
-            .filter(status__exact='o')
-            .order_by('due_back')
-        )
-
-class LoanBookListView(PermissionRequiredMixin, ListView):
-    model = BookInstance
-    template_name = 'catalog/bookinstance_list_borrowed.html'
-    permission_required = 'catalog.can_mark_returned', 'catalog.view_bookinstance'
-    paginate_by = 10
-
-    def get_queryset(self) -> QuerySet[BookInstance]:
-        return (
-            BookInstance.objects.select_related('book', 'borrower')
-            .filter(status__exact='o')
-            .order_by('due_back')
-        )
     
-class RenewBookLibrarian(PermissionRequiredMixin, UpdateView):
-    model = BookInstance
-    form = RenewBookForm
-    template_name = 'catalog/book_renew_librarian.html'
-    success_url = reverse_lazy('all-borrowed')
-    permission_required = 'catalog.can_mark_returned'
-
-    def form_valid(self, form:Form) -> HttpResponse:
-        book_instance = self.object
-        book_instance.due_back = form.cleaned_data['renewal_date']
-        book_instance.save()
-
-        return super().form_valid(form)
-
 class AuthorCreate(PermissionRequiredMixin, CreateView):
     model = Author
     fields = ['first_name', 'last_name', 'date_of_birth', 'date_of_death', 'photo']
@@ -123,7 +75,18 @@ class AuthorDelete(PermissionRequiredMixin, DeleteView):
             return HttpResponseRedirect(
                 reverse('author-delete', kwargs={'pk':self.object.pk})
             )
-        
+
+
+class BookListView(VersionedCacheListMixin, ListView):
+    model = Book
+    paginate_by = 10
+
+    def get_queryset(self) -> QuerySet[Book]:
+        return Book.objects.select_related('author').prefetch_related('genre')
+
+class BookDetailView(DetailView):
+    model = Book
+
 class BookCreate(PermissionRequiredMixin, CreateView):
     model = Book
     fields = ['title', 'author', 'summary', 'isbn', 'genre', 'photo']
@@ -147,9 +110,50 @@ class BookDelete(PermissionRequiredMixin, DeleteView):
             return HttpResponseRedirect(
                 reverse('book-delete', kwargs={'pk': self.object.pk})
             )
+
+
+class LoanBookByUserListView(LoginRequiredMixin, VersionedCacheListMixin, ListView):
+    model = BookInstance
+    template_name = 'catalog/bookinstance_list_borrowed_user.html'
+    paginate_by = 10
+    cache_key_prefix = 'user_bookinstance_list'
+
+    def get_queryset(self) -> QuerySet[BookInstance]:
+        return (
+            BookInstance.objects.select_related('book', 'borrower')
+            .filter(borrower=self.request.user)
+            .filter(status__exact='o')
+            .order_by('due_back')
+        )
+    
+class LoanBookListView(PermissionRequiredMixin, VersionedCacheListMixin, ListView):
+    model = BookInstance
+    template_name = 'catalog/bookinstance_list_borrowed.html'
+    permission_required = 'catalog.can_mark_returned', 'catalog.view_bookinstance'
+    paginate_by = 10
+
+    def get_queryset(self) -> QuerySet[BookInstance]:
+        return (
+            BookInstance.objects.select_related('book', 'borrower')
+            .filter(status__exact='o')
+            .order_by('due_back')
+        )
+    
+class RenewBookLibrarian(PermissionRequiredMixin, UpdateView):
+    model = BookInstance
+    form = RenewBookForm
+    template_name = 'catalog/book_renew_librarian.html'
+    success_url = reverse_lazy('all-borrowed')
+    permission_required = 'catalog.can_mark_returned'
+
+    def form_valid(self, form:Form) -> HttpResponse:
+        book_instance = self.object
+        book_instance.due_back = form.cleaned_data['renewal_date']
+
+        return super().form_valid(form)
+    
         
 class BorrowOrReserveBook(LoginRequiredMixin, UpdateView):
-
     model = BookInstance
     form_class = BorrowOrReserveBookForm
     

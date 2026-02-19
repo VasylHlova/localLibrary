@@ -7,7 +7,7 @@ from django.urls import reverse
 from common.file.utils import GeneratePath
 from common.validators import validate_file_size
 from common.file.mixins import ImageProcessingMixin
-from common.utils import UserRole
+from common.choices import UserRole
 
 class CustomUser(AbstractUser):
     email = models.EmailField('email address', unique=True)

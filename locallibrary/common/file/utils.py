@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.utils.deconstruct import deconstructible
 from django.db import models

@@ -1,3 +1,7 @@
+import uuid
+from datetime import date
+from typing import Optional, Any
+
 from django.db import models
 from django.urls import reverse
 from django.db.models import UniqueConstraint
@@ -6,12 +10,8 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 
-import uuid
-from datetime import date
-from typing import Optional, Any
-
 from common.file.utils import  GeneratePath
-from common.utils import InstanceStatus, LoanStatus
+from common.choices import InstanceStatus, LoanStatus
 from common.validators import validate_file_size
 from common.file.mixins import ImageProcessingMixin
 
