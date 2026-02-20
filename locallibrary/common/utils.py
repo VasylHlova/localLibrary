@@ -16,11 +16,6 @@ def increment_model_cache_version(model_name: str) -> None:
     except ValueError:
         cache.set(version_key, 1, timeout=None)
 
-
-from typing import Any
-from django.core.paginator import Paginator, Page
-from django.core.cache import cache
-
 class VersionedCacheListMixin:
     cache_timeout = 60 * 60 
     cache_key_prefix = None 

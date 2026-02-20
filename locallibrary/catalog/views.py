@@ -6,11 +6,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.db.models import QuerySet
 from django.forms import Form
+from django.db.models import Q
 
 
 from .models import Book, Author, BookInstance
-from .forms  import RenewBookForm,  BorrowOrReserveBookForm
+from .forms  import RenewBookForm,  BorrowOrReserveBookForm, ChangeBookStatusForm
 from common.utils import VersionedCacheListMixin
+from common.choices import InstanceStatus
 
 from typing import Any
 
@@ -117,7 +119,7 @@ class LoanBookByUserListView(LoginRequiredMixin, VersionedCacheListMixin, ListVi
     paginate_by = 10
 
     def get_cache_prefix(self):
-        base_prefix = super.get_cache_prefix()
+        base_prefix = super().get_cache_prefix()
 
         return f'{base_prefix}_user_{self.request.user.id}'
 
@@ -125,7 +127,9 @@ class LoanBookByUserListView(LoginRequiredMixin, VersionedCacheListMixin, ListVi
         return (
             BookInstance.objects.select_related('book', 'borrower')
             .filter(borrower=self.request.user)
-            .filter(status__exact='o')
+            .filter(Q(status=InstanceStatus.ON_LOAN) 
+                | Q(status=InstanceStatus.RESERVED)
+            )
             .order_by('due_back')
         )
     
@@ -144,17 +148,11 @@ class LoanBookListView(PermissionRequiredMixin, VersionedCacheListMixin, ListVie
     
 class RenewBookLibrarian(PermissionRequiredMixin, UpdateView):
     model = BookInstance
-    form = RenewBookForm
+    form_class = RenewBookForm
     template_name = 'catalog/book_renew_librarian.html'
     success_url = reverse_lazy('all-borrowed')
     permission_required = 'catalog.can_mark_returned'
 
-    def form_valid(self, form:Form) -> HttpResponse:
-        book_instance = self.object
-        book_instance.due_back = form.cleaned_data['renewal_date']
-
-        return super().form_valid(form)
-    
         
 class BorrowOrReserveBook(LoginRequiredMixin, UpdateView):
     model = BookInstance
@@ -169,18 +167,17 @@ class BorrowOrReserveBook(LoginRequiredMixin, UpdateView):
             queryset = queryset.select_for_update()
         return super().get_object(queryset)
     
-    def form_valid(self, form: BorrowOrReserveBookForm) -> HttpResponse:
-        form.instance.borrower = self.request.user
+    def get_form_kwargs(self) -> dict[str, Any]:
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
-        return super().form_valid(form)
-
-    
     def get_success_url(self) -> str:
         return reverse('my-borrowed')
 
 class ChangeBookStatus(PermissionRequiredMixin, UpdateView):
     model = BookInstance
-    fields = {'status'}
+    form_class = ChangeBookStatusForm
     permission_required = ['catalog.can_mark_returned', 'catalog.update_bookinstance']
     template_name = 'catalog/book_change_status.html'
     success_url = reverse_lazy('all-borrowed')

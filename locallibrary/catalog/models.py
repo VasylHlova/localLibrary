@@ -1,6 +1,6 @@
 import uuid
-from datetime import date
-from typing import Optional, Any
+from datetime import date, timedelta
+from typing import Any
 
 from django.db import models
 from django.urls import reverse
@@ -9,11 +9,13 @@ from django.db.models.functions import Lower
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
+from django.db import transaction
 
 from common.file.utils import  GeneratePath
 from common.choices import InstanceStatus, LoanStatus
 from common.validators import validate_file_size
 from common.file.mixins import ImageProcessingMixin
+from user.models import CustomUser
 
 class Genre(models.Model):
     name = models.CharField(
@@ -134,75 +136,49 @@ class BookInstance(models.Model):
     def is_overdue(self) -> bool:
         return bool(self.due_back and date.today() > self.due_back)
     
-    @classmethod
-    def from_db(cls, db: Optional[str], field_names: list[str], values: list[Any]) -> Any:
-        instance = super().from_db(db, field_names, values)
-        # Using setattr to avoid type checking issues with dynamic attributes
-        setattr(instance, '_loaded_status', instance.status) 
-        return instance
-    
+
+    @transaction.atomic
+    def borrow_book(self, user: CustomUser, due_back: int, status: InstanceStatus) -> None:
+        if self.status != InstanceStatus.AVAILABLE:
+            raise ValidationError("Book is not available for loan.")
+        
+        
+        self.status = status
+        self.borrower = user
+        self.due_back = due_back
+        self.save()
+
+        Loan.objects.create(
+            book_instance=self,
+            borrower=user,
+            due_back=due_back,
+            status=LoanStatus.ACTIVE
+        )
+
+    @transaction.atomic
+    def return_book(self) -> None:
+        if self.status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
+            return 
+
+        active_loan = Loan.objects.filter(
+            book_instance=self,
+            returned_at__isnull=True
+        ).select_for_update().first() 
+
+        if active_loan:
+            active_loan.close_loan() 
+
+        self.status = InstanceStatus.AVAILABLE
+        self.borrower = None
+        self.due_back = None
+        self.save()
+
     def clean(self) -> None:
         super().clean()
         if self.status in (InstanceStatus.ON_LOAN, InstanceStatus.RESERVED):
             if not self.due_back:
                 raise ValidationError("Invalid due back date")
-            
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        is_creating = self._state.adding
-        old_status: Optional[str] = getattr(self, '_loaded_status', None)
-        
-        if self.status == InstanceStatus.AVAILABLE:
-            self.due_back = None
-            self.borrower = None
-
-        super().save(*args, **kwargs) 
-
-        self._handle_loan_history(is_creating, old_status)
-        
-        # Update the loaded status after save
-        setattr(self, '_loaded_status', self.status)
-
-    def _handle_loan_history(self, is_creating: bool, old_status: Optional[str]) -> None:
-        current_status = self.status
-        previous_status = old_status
-
-        if is_creating and current_status == InstanceStatus.ON_LOAN:
-            self._create_loan_record()
-            return
-
-        if not is_creating and current_status != previous_status:
-            if previous_status == InstanceStatus.ON_LOAN:
-                self._close_active_loan()
-
-            if current_status == InstanceStatus.ON_LOAN:
-                self._create_loan_record()
-
-    def _create_loan_record(self) -> None:
-        if self.borrower and self.due_back:
-            Loan.objects.create(
-                book_instance=self,
-                borrower=self.borrower,
-                due_back=self.due_back,
-                status=LoanStatus.ACTIVE
-            )
-
-    def _close_active_loan(self) -> None:
-        active_loan = Loan.objects.filter(
-            book_instance=self,
-            returned_at__isnull=True
-        ).first()
-
-        if active_loan:
-            stored_due_back = active_loan.due_back
-
-            if stored_due_back and date.today() > stored_due_back:
-                active_loan.is_overdue = True
-                active_loan.overdue_days = (date.today() - stored_due_back).days
-
-            active_loan.status = LoanStatus.RETURNED
-            active_loan.returned_at = date.today()
-            active_loan.save()
-            
+                        
     def __str__(self) -> str:
         book_title = self.book.title if self.book else "Unknown Book"
         return f'{self.id} ({book_title})'
@@ -261,3 +237,14 @@ class Loan(models.Model):
         indexes= [
             models.Index(fields=['borrower',])
         ]
+
+    def close_loan(self) -> None:
+        self.status = LoanStatus.RETURNED
+
+        if self.due_back < date.today():
+            delta = date.today() - self.due_back
+
+            self.is_overdue = True
+            self.overdue_days = delta.days
+        else:
+            self.is_overdue = False

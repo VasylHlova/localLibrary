@@ -5,6 +5,8 @@ from django.utils.translation import gettext_lazy as _
 from .models import CustomUser, UserProfile
 from common.validators import validate_user_age
 
+from datetime import date
+
 class CustomSignupForm(forms.Form):
 
     first_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'placeholder': 'First name'}))
@@ -28,7 +30,13 @@ class UpdateUserProfileForm(forms.ModelForm):
         if self.instance and self.instance.user:
             self.fields['first_name'].initial = self.instance.user.first_name
             self.fields['last_name'].initial = self.instance.user.last_name
-            self.fields['date_of_birth'].validators.append(validate_user_age)
+
+    def clean_date_of_birth(self)-> date:
+        data = self.cleaned_data.get('date_of_birth')
+        if data: 
+            validate_user_age(data)
+        
+        return data
 
     def save(self, commit=True):
         profile = super().save(commit=False)

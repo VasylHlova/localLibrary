@@ -23,11 +23,10 @@ def validate_term_limit(value:datetime.date, status:str=InstanceStatus.ON_LOAN) 
         raise ValidationError(_(f'Invalid date - renewal more than {weeks} weeks ahead!'))
     
 def validate_user_age(value: datetime.date) -> None:
-    if value:
-        user_age = datetime.date.today().year - value.year - (
-            (datetime.date.today().month, datetime.date.today().day) < (value.month, value.day)
+    user_age = datetime.date.today().year - value.year - (
+        (datetime.date.today().month, datetime.date.today().day) < (value.month, value.day)
         )
 
-        if user_age > 100 or user_age < 6:
-            raise ValidationError(_('Invalid date of birth!'))
+    if user_age > 100 or user_age < 6:
+        raise ValidationError(_('Invalid date of birth!'))
 

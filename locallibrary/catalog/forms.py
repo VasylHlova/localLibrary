@@ -6,21 +6,26 @@ from .models import BookInstance
 from common.validators import validate_future_date, validate_term_limit
 from common.choices import InstanceStatus
 
-from typing import Any
+from datetime import date
 
-class RenewBookForm(forms.Form):
-    renewal_date = forms.DateField(help_text='Enter a date between now and 4 weeks (default 3).',
+class RenewBookForm(forms.ModelForm):
+    due_back = forms.DateField(help_text='Enter a date between now and 4 weeks (default 3).',
                                    validators=[validate_future_date, validate_term_limit])
+    class Meta:
+        model = BookInstance
+        fields = ['due_back']
     
 class BaseBookInstanceForm(forms.ModelForm):
     class Meta:
         model = BookInstance
         fields = ['status', 'due_back']
 
-    def __init__(self, *args:Any, **kwargs:Any) -> None:
-        super().__init__(*args, **kwargs)
+    def clean_due_back(self) -> date:
+        data = self.cleaned_data.get('due_back')
+        if data:
+            validate_future_date(data)
 
-        self.fields['due_back'].validators.append(validate_future_date)
+        return data
 
     def clean(self):
         cleaned_data = super().clean()
@@ -46,10 +51,15 @@ class BorrowOrReserveBookForm(BaseBookInstanceForm):
     status = forms.ChoiceField(choices=STATUS_CHOICES, label='What do you wish?', widget=forms.RadioSelect)
 
     class Meta(BaseBookInstanceForm.Meta):
+        fields = ['due_back']
         widgets = {
             'due_back': forms.DateInput(attrs={'placeholder': '1999-12-31',})
         }
     
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
     def clean(self) -> dict:
         cleaned_data = super().clean()
 
@@ -59,7 +69,19 @@ class BorrowOrReserveBookForm(BaseBookInstanceForm):
                 raise ValidationError(_('This book is not available!'))
                             
         return cleaned_data
+    
+    def save(self, commit: bool = True) -> BookInstance:
+        instance =  super().save(commit=False)
+
+        due_back = self.cleaned_data.get('due_back')
+        status = self.cleaned_data.get('status')
+
+        if commit:
+
+            instance.borrow_book(self.user, due_back, status)
         
+        return instance
+
 class ChangeBookStatusForm(BaseBookInstanceForm):
 
     def clean(self) -> dict:
@@ -73,4 +95,6 @@ class ChangeBookStatusForm(BaseBookInstanceForm):
                 self.add_error('due_back', _('Invalid due back value for this status'))
 
         return cleaned_data
+    
+
 
