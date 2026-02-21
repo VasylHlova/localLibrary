@@ -51,11 +51,10 @@ class BorrowOrReserveBookForm(BaseBookInstanceForm):
     status = forms.ChoiceField(choices=STATUS_CHOICES, label='What do you wish?', widget=forms.RadioSelect)
 
     class Meta(BaseBookInstanceForm.Meta):
-        fields = ['due_back']
         widgets = {
             'due_back': forms.DateInput(attrs={'placeholder': '1999-12-31',})
         }
-    
+        
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -95,6 +94,8 @@ class ChangeBookStatusForm(BaseBookInstanceForm):
                 self.add_error('due_back', _('Invalid due back value for this status'))
 
         return cleaned_data
+    
+
     
 
 

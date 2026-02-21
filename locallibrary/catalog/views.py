@@ -1,16 +1,23 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseRedirect,  HttpRequest, HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.decorators import permission_required, login_required
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.decorators.http import require_POST
+from django.contrib import messages
 from django.db.models import QuerySet
 from django.forms import Form
 from django.db.models import Q
 
 
 from .models import Book, Author, BookInstance
-from .forms  import RenewBookForm,  BorrowOrReserveBookForm, ChangeBookStatusForm
+from .forms  import (
+    RenewBookForm,  
+    BorrowOrReserveBookForm, 
+    ChangeBookStatusForm
+)
 from common.utils import VersionedCacheListMixin
 from common.choices import InstanceStatus
 
@@ -113,7 +120,7 @@ class BookDelete(PermissionRequiredMixin, DeleteView):
             )
 
 
-class LoanBookByUserListView(LoginRequiredMixin, VersionedCacheListMixin, ListView):
+class LoanBookInstanceByUserListView(LoginRequiredMixin, VersionedCacheListMixin, ListView):
     model = BookInstance
     template_name = 'catalog/bookinstance_list_borrowed_user.html'
     paginate_by = 10
@@ -133,7 +140,7 @@ class LoanBookByUserListView(LoginRequiredMixin, VersionedCacheListMixin, ListVi
             .order_by('due_back')
         )
     
-class LoanBookListView(PermissionRequiredMixin, VersionedCacheListMixin, ListView):
+class LoanBookInstanceListView(PermissionRequiredMixin, VersionedCacheListMixin, ListView):
     model = BookInstance
     template_name = 'catalog/bookinstance_list_borrowed.html'
     permission_required = 'catalog.can_mark_returned', 'catalog.view_bookinstance'
@@ -142,19 +149,21 @@ class LoanBookListView(PermissionRequiredMixin, VersionedCacheListMixin, ListVie
     def get_queryset(self) -> QuerySet[BookInstance]:
         return (
             BookInstance.objects.select_related('book', 'borrower')
-            .filter(status__exact='o')
+            .filter(Q(status=InstanceStatus.ON_LOAN) 
+                | Q(status=InstanceStatus.RESERVED)
+            )
             .order_by('due_back')
         )
     
-class RenewBookLibrarian(PermissionRequiredMixin, UpdateView):
+class RenewBookInstanceLibrarian(PermissionRequiredMixin, UpdateView):
     model = BookInstance
     form_class = RenewBookForm
     template_name = 'catalog/book_renew_librarian.html'
     success_url = reverse_lazy('all-borrowed')
-    permission_required = 'catalog.can_mark_returned'
+    permission_required = 'catalog.update_bookinstance'
 
         
-class BorrowOrReserveBook(LoginRequiredMixin, UpdateView):
+class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):
     model = BookInstance
     form_class = BorrowOrReserveBookForm
     
@@ -175,9 +184,23 @@ class BorrowOrReserveBook(LoginRequiredMixin, UpdateView):
     def get_success_url(self) -> str:
         return reverse('my-borrowed')
 
-class ChangeBookStatus(PermissionRequiredMixin, UpdateView):
+class ChangeBookInstanceStatus(PermissionRequiredMixin, UpdateView):
     model = BookInstance
     form_class = ChangeBookStatusForm
-    permission_required = ['catalog.can_mark_returned', 'catalog.update_bookinstance']
+    permission_required = ['catalog.can_change_status',]
     template_name = 'catalog/book_change_status.html'
     success_url = reverse_lazy('all-borrowed')
+
+@login_required
+@permission_required(perm='catalog.can_mark_returned', raise_exception=True)
+@require_POST
+def return_bookinstance(request, pk): 
+    instance = get_object_or_404(BookInstance, pk=pk)
+
+    try:
+        instance.return_book()
+        messages.success(request, f"Book '{instance.book.title}' ({instance.id}) successfuly returned.")
+    except Exception as e:
+        messages.error(request, f"Error during returning: {e}")
+
+    return redirect('all-borrowed')

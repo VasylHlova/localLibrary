@@ -126,11 +126,14 @@ class BookInstance(models.Model):
 
     class Meta:
         ordering = ['due_back']
-        permissions = (("can_mark_returned", "Set book as returned"),)
+        permissions = (
+            ("can_mark_returned", "Set book as returned"),
+            ("can_change_status", "Set any book status"),
+        )
         indexes= [
             models.Index(fields=['borrower']),
             models.Index(fields=['book'])
-        ]
+        ] 
 
     @property
     def is_overdue(self) -> bool:
@@ -139,10 +142,6 @@ class BookInstance(models.Model):
 
     @transaction.atomic
     def borrow_book(self, user: CustomUser, due_back: int, status: InstanceStatus) -> None:
-        if self.status != InstanceStatus.AVAILABLE:
-            raise ValidationError("Book is not available for loan.")
-        
-        
         self.status = status
         self.borrower = user
         self.due_back = due_back
@@ -248,3 +247,5 @@ class Loan(models.Model):
             self.overdue_days = delta.days
         else:
             self.is_overdue = False
+        
+        self.save()
