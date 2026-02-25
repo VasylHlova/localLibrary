@@ -1,6 +1,5 @@
 import uuid
-from datetime import date, timedelta
-from typing import Any
+from datetime import date
 
 from django.db import models
 from django.urls import reverse

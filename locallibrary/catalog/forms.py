@@ -91,7 +91,7 @@ class ChangeBookStatusForm(BaseBookInstanceForm):
 
         if status_data == InstanceStatus.AVAILABLE:
             if due_back_data:
-                self.add_error('due_back', _('Invalid due back value for this status'))
+                self.add_error('due_back', _('The due back field must be empty for this status!'))
 
         return cleaned_data
     
