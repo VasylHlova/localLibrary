@@ -9,10 +9,11 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+
 import os
-from dotenv import load_dotenv
 from pathlib import Path
 
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -24,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -35,70 +36,70 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'catalog.apps.CatalogConfig',
-    'user.apps.UserConfig',
-    'django.contrib.sites',
-    'crispy_forms',
-    'crispy_bootstrap5',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.github',
-    'storages',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "catalog.apps.CatalogConfig",
+    "user.apps.UserConfig",
+    "django.contrib.sites",
+    "crispy_forms",
+    "crispy_bootstrap5",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.github",
+    "storages",
 ]
 
 SITE_ID = 1
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware'
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
-ROOT_URLCONF = 'locallibrary.urls'
+ROOT_URLCONF = "locallibrary.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'locallibrary.wsgi.application'
+WSGI_APPLICATION = "locallibrary.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('ENGINE'),
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': '',
-        'ATOMIC_REQUESTS': True,
+    "default": {
+        "ENGINE": os.getenv("ENGINE"),
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": "",
+        "ATOMIC_REQUESTS": True,
     }
 }
 
@@ -108,16 +109,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -125,9 +126,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'Europe/Kyiv'
+TIME_ZONE = "Europe/Kyiv"
 
 USE_I18N = True
 
@@ -138,107 +139,102 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 
 # Social authentication
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP':{
-            'client_id': '286709041588-omohggkbrb2ualn6qbqhusfvp01i8uml.apps.googleusercontent.com',
-            'secret': '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',
-            'key': '',
+    "google": {
+        "APP": {
+            "client_id": os.getenv("GOOGLE_CLIENT"),
+            "secret": os.getenv("GOOGLE_SECRET"),
+            "key": "",
         },
-        'SCOPE':[
-            'profile',
-            'email',
-        ]
+        "SCOPE": [
+            "profile",
+            "email",
+        ],
     },
-    'github': {
-        'APP':{
-            'client_id': 'Ov23limCHnT39fEqyYVr',
-            'secret': 'ee75af4124791a5f33a95de6c6cb34241dd1c188',
-            'key': '',
+    "github": {
+        "APP": {
+            "client_id": os.getenv("GITHUB_CLIENT"),
+            "secret": os.getenv("GITHUB_SECRET"),
+            "key": "",
         },
-        'SCOPE':[
-            'user',
-            'repo',
-            'read:org',
-        ]
+        "SCOPE": [
+            "user",
+            "repo",
+            "read:org",
+        ],
     },
 }
 
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 
-LOGIN_REDIRECT_URL = 'index'
-LOGOUT_REDIRECT_URL = 'index'
+LOGIN_REDIRECT_URL = "index"
+LOGOUT_REDIRECT_URL = "index"
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_UNIQUE_EMAIL = True
 
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_LOGIN_BY_CODE_ENABLED = False
 
 
-ACCOUNT_SIGNUP_FIELDS = [
-    'email*', 
-    'first_name', 
-    'last_name',
-    'password1' 
-]
+ACCOUNT_SIGNUP_FIELDS = ["email*", "first_name", "last_name", "password1"]
 
-SOCIALACCOUNT_ADAPTER = 'user.adapters.MySocialAccountAdapter'
+SOCIALACCOUNT_ADAPTER = "user.adapters.MySocialAccountAdapter"
 
-AUTH_USER_MODEL = 'user.CustomUser'
+AUTH_USER_MODEL = "user.CustomUser"
 
-ACCOUNT_SIGNUP_FORM_CLASS = 'user.forms.CustomSignupForm'
+ACCOUNT_SIGNUP_FORM_CLASS = "user.forms.CustomSignupForm"
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-#Cloudflare settings
-AWS_ACCESS_KEY_ID = os.getenv('CLOUDFLARE_R2_ACCESS_KEY')
-AWS_SECRET_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_SECRET_KEY') 
-AWS_STORAGE_BUCKET_NAME = os.getenv('CLOUDFLARE_R2_BUCKET')
-AWS_S3_ENDPOINT_URL = os.getenv('CLOUDFLARE_R2_BUCKET_ENDPOINT')
+# Cloudflare settings
+AWS_ACCESS_KEY_ID = os.getenv("CLOUDFLARE_R2_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = os.getenv("CLOUDFLARE_R2_SECRET_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("CLOUDFLARE_R2_BUCKET")
+AWS_S3_ENDPOINT_URL = os.getenv("CLOUDFLARE_R2_BUCKET_ENDPOINT")
 
 
-AWS_S3_SIGNATURE_VERSION = 's3v4' 
-AWS_S3_CUSTOM_DOMAIN = os.getenv('CLOUDFLARE_R2_DOMAIN') 
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_S3_CUSTOM_DOMAIN = os.getenv("CLOUDFLARE_R2_DOMAIN")
 
 
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         "OPTIONS": {
-            "location": "media", 
+            "location": "media",
         },
     },
     "staticfiles": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         "OPTIONS": {
-            "location": "static", 
+            "location": "static",
         },
     },
 }
 
 
 AWS_S3_OBJECT_PARAMETERS = {
-    'CacheControl': 'max-age=86400',
+    "CacheControl": "max-age=86400",
 }
 
-MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
 
-MEDIA_ROOT = BASE_DIR / 'media'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_ROOT = BASE_DIR / "media"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 # Redis
@@ -248,6 +244,6 @@ CACHES = {
         "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+        },
     }
 }

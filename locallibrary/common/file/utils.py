@@ -1,47 +1,45 @@
-from django.core.files.base import ContentFile
-from django.utils.deconstruct import deconstructible
-from django.db import models
-from django.core.files.base import File
-
-import os
 import hashlib
+import os
 from io import BytesIO
+
+from django.core.files.base import ContentFile, File
+from django.db import models
+from django.utils.deconstruct import deconstructible
 from PIL import Image, ImageOps
-from typing import Tuple, Optional
+
 
 @deconstructible
 class GeneratePath:
-    def __init__(self, path:str) -> None:
+    def __init__(self, path: str) -> None:
         self.path = path
 
-    def __call__(self, instance:models.Model, filename:str) -> str:
-        hashed_name = hashlib.sha256(filename.encode('utf-8')).hexdigest()
+    def __call__(self, instance: models.Model, filename: str) -> str:
+        hashed_name = hashlib.sha256(filename.encode("utf-8")).hexdigest()
 
-        file_ext = '.webp'
-        new_filename = f'{hashed_name}{file_ext}'
+        file_ext = ".webp"
+        new_filename = f"{hashed_name}{file_ext}"
 
         return os.path.join(self.path, new_filename)
 
-    
-def processing_image(image:File, max_size:Tuple[int,int]=(800, 800)) -> Optional[File]:
+
+def processing_image(image: File, max_size: tuple[int, int] = (800, 800)) -> File | None:
     if not image:
         return None
-    
+
     try:
         img = Image.open(image)
         img = ImageOps.exif_transpose(img)
 
-        if img.mode in ('RGBA', 'P'):
-            img = img.convert('RGB')
-        
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
 
         img = ImageOps.fit(img, max_size, method=Image.Resampling.LANCZOS, centering=(0.5, 0.5))
 
         output = BytesIO()
-        img.save(output, format='WEBP', quality=85, optimize=True)
+        img.save(output, format="WEBP", quality=85, optimize=True)
         output.seek(0)
 
         return ContentFile(output.read())
 
     except Exception:
-        return True    
+        return True
