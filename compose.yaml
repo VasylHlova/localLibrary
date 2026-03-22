@@ -43,6 +43,22 @@ services:
           condition: service_healthy
         redis:
           condition: service_healthy
+      develop:
+        watch:
+          - action: sync+restart
+            path: .
+            target: /app
+            ignore:
+              - .venv/
+              - __pycache__/
+              - .git/
+              - .ruff_cache/
+              - migrations/  
+
+          - action: rebuild
+            path: pyproject.toml
+          - action: rebuild
+            path: uv.lock
       volumes:
         - .:/app
         - /app/.venv
