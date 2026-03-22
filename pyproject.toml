@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = 'local-library'
+description = "You can borrow your desirable books here!"
+
+version = '2026.0.0'
+
+requires-python = ">= 3.12"
+dependencies = [
+    "crispy-bootstrap5>=2026.3",
+    "django>=6.0.3",
+    "django-allauth>=65.15.0",
+    "django-crispy-forms>=2.6",
+    "django-redis>=6.0.0",
+    "django-storages[boto3]>=1.14.6",
+    "dotenv>=0.9.9",
+    "gunicorn>=25.1.0",
+    "pillow>=12.1.1",
+    "psycopg>=3.3.3",
+    "pyjwt[crypto]>=2.12.1",
+    "requests>=2.32.5",
+]
+
+[dependency-groups]
+dev = [
+    "django-silk>=5.5.0",
+    "ruff>=0.15.7",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["locallibrary"]
+
+
+[tool.ruff]
+
+line-length = 108
+target-version = "py312"
+
+exclude = [".venv", "migrations", ".git"]
+
+lint.select = ["E", "F", "I", "UP", "DJ"]
