@@ -16,11 +16,11 @@ dependencies = [
     "django-crispy-forms>=2.6",
     "django-redis>=6.0.0",
     "django-storages[boto3]>=1.14.6",
-    "dotenv>=0.9.9",
     "gunicorn>=25.1.0",
     "pillow>=12.1.1",
-    "psycopg>=3.3.3",
+    "psycopg[binary]>=3.3.3",
     "pyjwt[crypto]>=2.12.1",
+    "python-dotenv>=1.2.2",
     "requests>=2.32.5",
 ]
 
