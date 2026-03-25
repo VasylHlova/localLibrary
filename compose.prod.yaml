@@ -1,0 +1,41 @@
+services:
+  prod_db:
+    image: postgres:16-alpine
+    restart: always
+    env_file:          
+      - .env.prod
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    expose:
+      - 5432
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    expose:
+      - 6379
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.prod
+    depends_on:
+      prod_db:
+        condition: service_healthy
+    volumes:
+      - static_volume_prod:/app/locallibrary/static
+      - media_volume_prod:/app/locallibrary/media
+
+volumes:
+  postgres_data_prod:
+  static_volume_prod:
+  media_volume_prod:
