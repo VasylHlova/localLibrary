@@ -1,18 +1,22 @@
 import datetime
 
 from common.choices import InstanceStatus
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from catalog.models import  Loan
 from catalog.forms import (
     BaseBookInstanceForm,
     BorrowOrReserveBookForm,
     ChangeBookStatusForm,
     RenewBookForm,
 )
-from catalog.models import Author, Book, BookInstance, Genre, Language, Loan
+from catalog.tests.factories import (
+    UserFactory, 
+    AvailableBookInstanceFactory, 
+    OnLoanBookInstanceFactory
+)
 
-User = get_user_model()
+
 
 
 class RenewBookFormTest(TestCase):
@@ -98,52 +102,29 @@ class ChangeBookStatusFormTest(TestCase):
 
 
 class BorrowOrReserveBookFormTest(TestCase):
-    def setUp(self):
-        self.author = Author.objects.create(first_name="Test", last_name="Author")
-        self.user = User.objects.create(
-            email="test@gmail.com", first_name="test", last_name="user", password="testpassword"
-        )
-
-        self.language = Language.objects.create(name="English")
-
-        self.book = Book.objects.create(
-            title="Test Book",
-            summary="Summary of the test book",
-            isbn="1234567890123",
-            author=self.author,
-            language=self.language,
-        )
-
-        self.genre = Genre.objects.create(name="Fiction")
-        self.book.genre.add(self.genre)
-
-        self.instance = BookInstance.objects.create(
-            book=self.book, status=InstanceStatus.ON_LOAN, due_back=datetime.date.today()
-        )
-
     def test_cannot_borrow_unavailable_book(self):
         form_data = {
             "status": InstanceStatus.ON_LOAN,
             "due_back": datetime.date.today() + datetime.timedelta(weeks=1),
         }
-
-        form = BorrowOrReserveBookForm(data=form_data, instance=self.instance)
+        unavailable_instance = OnLoanBookInstanceFactory()
+        form = BorrowOrReserveBookForm(data=form_data, instance=unavailable_instance)
 
         self.assertFalse(form.is_valid())
         self.assertIn("__all__", form.errors)
         self.assertEqual(form.non_field_errors()[0], "This book is not available!")
 
     def test_can_borrow_available_book(self):
-        self.instance.status = InstanceStatus.AVAILABLE
-        self.instance.save()
+        user = UserFactory()
+        available_instance = AvailableBookInstanceFactory()
 
         form_data = {
             "status": InstanceStatus.ON_LOAN,
             "due_back": datetime.date.today() + datetime.timedelta(weeks=1),
         }
 
-        form = BorrowOrReserveBookForm(data=form_data, instance=self.instance)
-        form.user = self.user
+        form = BorrowOrReserveBookForm(data=form_data, instance=available_instance)
+        form.user = user
 
         self.assertTrue(form.is_valid())
 
@@ -151,9 +132,12 @@ class BorrowOrReserveBookFormTest(TestCase):
 
         self.assertEqual(saved_instance.status, InstanceStatus.ON_LOAN)
 
-        self.instance.refresh_from_db()
-        self.assertEqual(self.instance.status, InstanceStatus.ON_LOAN)
-        self.assertEqual(self.instance.borrower, self.user)
+        available_instance.refresh_from_db()
+        self.assertEqual(available_instance.status, InstanceStatus.ON_LOAN)
+        self.assertEqual(available_instance.borrower, user)
 
-        history_exists = Loan.objects.filter(book_instance=self.instance, borrower=self.user).exists()
+        history_exists = Loan.objects.filter(
+            book_instance=available_instance, 
+            borrower=user
+        ).exists()
         self.assertTrue(history_exists, "Запис в історії позичань має бути створений")
