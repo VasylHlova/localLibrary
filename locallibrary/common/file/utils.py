@@ -42,4 +42,4 @@ def processing_image(image: File, max_size: tuple[int, int] = (800, 800)) -> Fil
         return ContentFile(output.read())
 
     except Exception:
-        return True
+        return None

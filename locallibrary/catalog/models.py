@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
-from django.db.models import UniqueConstraint
+from django.db.models import UniqueConstraint, Q, CheckConstraint
 from django.db.models.functions import Lower
 from django.urls import reverse
 from user.models import CustomUser
@@ -33,9 +33,6 @@ class Genre(models.Model):
 
     def __str__(self) -> str:
         return str(self.name)
-
-    def get_absolute_url(self) -> str:
-        return reverse("genre-default", args=[str(self.id)])
 
 
 class Language(models.Model):
@@ -74,7 +71,6 @@ class Book(ImageProcessingMixin, models.Model):
         "catalog.Language",
         help_text="Select a language for this book",
         on_delete=models.PROTECT,
-        default=1,
         related_name="books",
     )
     photo = models.ImageField(
@@ -114,7 +110,7 @@ class BookInstance(models.Model):
     due_back = models.DateField(null=True, blank=True, help_text="Date when book should become available")
     status = models.CharField(
         choices=InstanceStatus.choices,
-        max_length=1,
+        max_length=20,
         default=InstanceStatus.MAINTENANCE,
         help_text="Book availability",
     )
@@ -132,23 +128,36 @@ class BookInstance(models.Model):
             ("can_mark_returned", "Set book as returned"),
             ("can_change_status", "Set any book status"),
         )
+        constraints = [
+                CheckConstraint(
+                    condition=(
+                        ~Q(status__in=[InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]) | 
+                        (Q(due_back__isnull=False) & Q(borrower__isnull=False))
+                    ),
+                    name='check_due_back_and_borrower_if_on_loan_or_reserved',
+                    violation_error_message="Due back date and borrower cannot be empty when book is on loan or reserved."
+                )
+        ]
         indexes = [models.Index(fields=["borrower"]), models.Index(fields=["book"])]
 
     def __str__(self) -> str:
-        book_title = self.book.title if self.book else "Unknown Book"
-        return f"{self.id} ({book_title})"
+        return f"{self.id} ({self.book.title})"
+    
     @property
     def is_overdue(self) -> bool:
         return bool(self.due_back and date.today() > self.due_back)
 
     @transaction.atomic
     def borrow_book(self, user: CustomUser, due_back: int, status: InstanceStatus) -> None:
+        if status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
+            return
+        
         self.status = status
         self.borrower = user
         self.due_back = due_back
         self.save()
 
-        Loan.objects.create(book_instance=self, borrower=user, due_back=due_back, status=LoanStatus.ACTIVE)
+        Loan.objects.create(book_instance=self, borrower=user, status=LoanStatus.ACTIVE)
 
     @transaction.atomic
     def return_book(self) -> None:
@@ -166,12 +175,6 @@ class BookInstance(models.Model):
         self.borrower = None
         self.due_back = None
         self.save()
-
-    def clean(self) -> None:
-        super().clean()
-        if self.status in (InstanceStatus.ON_LOAN, InstanceStatus.RESERVED):
-            if not self.due_back:
-                raise ValidationError("Due back date can not be empty")
 
 
 class Author(ImageProcessingMixin, models.Model):
@@ -218,7 +221,6 @@ class Loan(models.Model):
     )
 
     issued_at = models.DateField(auto_now_add=True)
-    due_back = models.DateField()
     returned_at = models.DateField(null=True, blank=True)
 
     status = models.CharField(max_length=20, choices=LoanStatus.choices, default=LoanStatus.ACTIVE)
@@ -239,9 +241,10 @@ class Loan(models.Model):
 
     def close_loan(self) -> None:
         self.status = LoanStatus.RETURNED
+        self.returned_at = date.today()
 
-        if self.due_back < date.today():
-            delta = date.today() - self.due_back
+        if self.book_instance.due_back < self.returned_at:
+            delta = self.returned_at - self.book_instance.due_back
 
             self.is_overdue = True
             self.overdue_days = delta.days
