@@ -1,7 +1,7 @@
 from typing import Any
 
-from common.choices import InstanceStatus
-from common.utils import VersionedCacheListMixin
+from utils.choices import InstanceStatus
+from locallibrary.utils.cache import VersionedCacheListMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin

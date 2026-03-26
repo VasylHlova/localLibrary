@@ -4,8 +4,8 @@ from django.test import TestCase
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.db import IntegrityError, transaction
 
-from catalog.models import Author, Genre, Language, Book, BookInstance, Loan
-from common.choices import InstanceStatus, LoanStatus
+from catalog.models import Genre, Language, Loan
+from utils.choices import InstanceStatus, LoanStatus
 
 from .factories import (
     UserFactory,

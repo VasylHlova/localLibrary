@@ -1,6 +1,6 @@
 import datetime
 
-from common.choices import InstanceStatus
+from utils.choices import InstanceStatus
 from django.test import TestCase
 
 from catalog.models import  Loan

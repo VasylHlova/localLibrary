@@ -1,6 +1,6 @@
 from datetime import date
 
-from common.validators import validate_user_age
+from utils.validators import validate_user_age
 from django import forms
 from django.http import HttpRequest
 

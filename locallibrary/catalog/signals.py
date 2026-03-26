@@ -1,6 +1,6 @@
 from typing import Any
 
-from common.utils import increment_model_cache_version
+from locallibrary.utils.cache import increment_model_cache_version
 from django.db import models, transaction
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver

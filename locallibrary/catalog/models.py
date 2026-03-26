@@ -1,10 +1,10 @@
 import uuid
 from datetime import date
 
-from common.choices import InstanceStatus, LoanStatus
-from common.file.mixins import ImageProcessingMixin
-from common.file.utils import GeneratePath
-from common.validators import validate_file_size
+from utils.choices import InstanceStatus, LoanStatus
+from utils.image_proccess import ImageProcessingMixin
+from locallibrary.utils.image_proccess import GeneratePath
+from utils.validators import validate_file_size
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator

@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
 from catalog.models import Author, Genre, Language, Book, BookInstance, Loan
-from common.choices import InstanceStatus, LoanStatus
+from utils.choices import InstanceStatus, LoanStatus
 
 
 class ImageFactory:
