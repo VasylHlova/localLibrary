@@ -11,7 +11,7 @@ User = get_user_model()
 
 
 @receiver(pre_save, sender=User)
-def user_deactivation_handler(sender: type[CustomUser], instance: CustomUser, **kwargs: Any) -> None:
+def cleanup_profile_picture_on_delete(sender: type[CustomUser], instance: CustomUser, **kwargs: Any) -> None:
     if not instance.pk:
         return
 

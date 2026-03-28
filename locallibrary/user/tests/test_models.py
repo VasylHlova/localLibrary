@@ -8,7 +8,7 @@ from utils.choices import UserRole
 class CustomUserModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = UserFactory(email='johndoe@mail.com')
+        cls.user = UserFactory(email='johndoe@mail.com', username='john doe')
 
     def test_email_field_verbose_name_is_email_address(self):
         verborse_name = self.user._meta.get_field("email").verbose_name
@@ -16,7 +16,7 @@ class CustomUserModelTest(TestCase):
 
     def test_email_field_raise_error_when_user_with_this_email_already_exists(self):
         with self.assertRaises(IntegrityError):
-            UserFactory(email='johndoe@mail.com', username='test username')
+            UserFactory(email='johndoe@mail.com')
 
     def test_username_field_verbose_name_is_username(self):
         verborse_name = self.user._meta.get_field("username").verbose_name
@@ -28,7 +28,7 @@ class CustomUserModelTest(TestCase):
 
     def test_username_field_raise_error_when_user_with_this_username_already_exists(self):
         with self.assertRaises(IntegrityError):
-            UserFactory()
+            UserFactory(username='john doe')
 
     def test_username_help_text_is_correct(self):
         help_text = self.user._meta.get_field("username").help_text
@@ -86,15 +86,14 @@ class UserProfileModelTest(TestCase):
             ("webp", "WEBP", "image/webp"),
         ]:
             with self.subTest(ext=ext):
-                profile = ProfileFactory.build(
-                    user=user,
-                    profile_picture=ImageFactory.create(name=f"test.{ext}", format=fmt, content_type=content_type)
-                )
+                profile = user.profile
+                profile.profile_picture = ImageFactory.create(name=f"test.{ext}", format=fmt, content_type=content_type)
                 profile.full_clean()
 
     def test_full_clean_raises_error_when_profile_picture_has_invalid_extension(self):
         user = UserFactory(username='unique')
-        profile = ProfileFactory.build(user=user, profile_picture=ImageFactory.create_invalid_extension())
+        profile = user.profile
+        profile.profile_picture = ImageFactory.create_invalid_extension()
 
         with self.assertRaises(ValidationError) as context:
             profile.full_clean()
@@ -104,7 +103,8 @@ class UserProfileModelTest(TestCase):
 
     def test_full_clean_raises_error_when_profile_picture_exceeds_max_size(self):
         user = UserFactory(username='unique')
-        profile = ProfileFactory.build(user=user, profile_picture=ImageFactory.create_oversized())
+        profile = user.profile
+        profile.profile_picture = ImageFactory.create_oversized()
 
         with self.assertRaises(ValidationError) as context:
             profile.full_clean()
@@ -114,9 +114,10 @@ class UserProfileModelTest(TestCase):
         
     def test_full_clean_passes_when_profile_picture_is_none(self):
         user = UserFactory(username='unique')
-        profile = ProfileFactory.build(user=user, profile_picture=None,)
+        profile = user.profile
+        profile.profile_picture = None
         profile.full_clean()
 
     def test_str_returns_user_first_and_last_names_and_role(self):
-        self.assertEqual(str(self.profile), f'{self.profile.user.username} ({self.profile.role})')
+        self.assertEqual(str(self.profile), f'{self.profile.user.first_name} {self.profile.user.last_name} ({self.profile.role})')
 

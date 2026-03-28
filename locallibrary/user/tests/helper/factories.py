@@ -31,12 +31,13 @@ class UserFactory(DjangoModelFactory):
         model = "user.CustomUser"
 
     email = factory.Sequence(lambda n: f"user{n}@gmail.com")
-    username = "John Doe"
+    username = factory.Sequence(lambda n: f"username{n}")
     first_name = "John"
     last_name = "Doe"
 
 class ProfileFactory(DjangoModelFactory):
     class Meta:
         model = 'user.UserProfile'
+        django_get_or_create = ('user',)
 
     user = factory.SubFactory(UserFactory)
