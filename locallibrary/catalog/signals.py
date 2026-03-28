@@ -1,10 +1,10 @@
 from typing import Any
 
-from locallibrary.utils.cache import increment_model_cache_version
 from django.db import models, transaction
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
+from utils.cache import increment_model_cache_version
 
 @receiver(post_delete, sender="catalog.Author")
 @receiver(post_delete, sender="catalog.Book")

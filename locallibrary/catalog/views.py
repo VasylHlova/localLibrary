@@ -83,10 +83,9 @@ class AuthorDelete(PermissionRequiredMixin, DeleteView):
 class BookListView(VersionedCacheListMixin, ListView):
     model = Book
     paginate_by = 10
-    ordering = ["title"]
 
     def get_queryset(self) -> QuerySet[Book]:
-        return Book.objects.select_related("author").prefetch_related("genre")
+        return Book.objects.select_related("author").prefetch_related("genre").order_by('title')
 
 
 class BookDetailView(DetailView):

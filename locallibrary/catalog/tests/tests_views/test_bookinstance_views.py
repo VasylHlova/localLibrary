@@ -11,8 +11,8 @@ from django.urls import reverse
 
 from catalog.models import BookInstance
 from utils.choices import InstanceStatus
-from helper.mixins import PermissionViewTestMixin
-from helper.factories import (
+from ..helper.mixins import PermissionViewTestMixin
+from ..helper.factories import (
     AvailableBookInstanceFactory,
     OnLoanBookInstanceFactory,
     UserFactory, 

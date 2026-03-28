@@ -10,7 +10,7 @@ from catalog.forms import (
     ChangeBookStatusForm,
     RenewBookForm,
 )
-from helper.factories import (
+from .helper.factories import (
     UserFactory, 
     AvailableBookInstanceFactory, 
     OnLoanBookInstanceFactory
