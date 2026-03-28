@@ -1,6 +1,6 @@
 from utils.choices import UserRole
 from utils.image_proccess import ImageProcessingMixin
-from locallibrary.utils.image_proccess import GeneratePath
+from utils.image_proccess import GeneratePath
 from utils.validators import validate_file_size
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator

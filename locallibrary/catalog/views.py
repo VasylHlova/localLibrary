@@ -1,7 +1,7 @@
 from typing import Any
 
 from utils.choices import InstanceStatus
-from locallibrary.utils.cache import VersionedCacheListMixin
+from utils.cache import VersionedCacheListMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -47,7 +47,7 @@ class AuthorListView(VersionedCacheListMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self) -> QuerySet[Author]:
-        return Author.objects.prefetch_related("books").all()[:3]
+        return Author.objects.prefetch_related("books")
 
 
 class AuthorDetailView(DetailView):
@@ -95,14 +95,14 @@ class BookDetailView(DetailView):
 
 class BookCreate(PermissionRequiredMixin, CreateView):
     model = Book
-    fields = ["title", "author", "summary", "isbn", "genre", "photo"]
-    permission_required = "catalog.create_book"
+    fields = ["title", "author", "summary", "isbn", "genre", "photo", 'language']
+    permission_required = "catalog.add_book"
 
 
 class BookUpdate(PermissionRequiredMixin, UpdateView):
     model = Book
     fields = "__all__"
-    permission_required = "catalog.update_book"
+    permission_required = "catalog.change_book"
 
 
 class BookDelete(PermissionRequiredMixin, DeleteView):
@@ -137,7 +137,7 @@ class LoanBookInstanceByUserListView(LoginRequiredMixin, VersionedCacheListMixin
         )
 
 
-class LoanBookInstanceListView(PermissionRequiredMixin, VersionedCacheListMixin, ListView):
+class LoanBookInstanceListView(LoginRequiredMixin, PermissionRequiredMixin, VersionedCacheListMixin, ListView):
     model = BookInstance
     template_name = "catalog/bookinstance_list_borrowed.html"
     permission_required = "catalog.can_mark_returned", "catalog.view_bookinstance"
@@ -151,12 +151,12 @@ class LoanBookInstanceListView(PermissionRequiredMixin, VersionedCacheListMixin,
         )
 
 
-class RenewBookInstanceLibrarian(PermissionRequiredMixin, UpdateView):
+class RenewBookInstanceLibrarian(LoginRequiredMixin,PermissionRequiredMixin, UpdateView):
     model = BookInstance
     form_class = RenewBookForm
     template_name = "catalog/book_renew_librarian.html"
     success_url = reverse_lazy("all-borrowed")
-    permission_required = "catalog.update_bookinstance"
+    permission_required = "catalog.change_bookinstance"
 
 
 class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):

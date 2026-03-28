@@ -7,7 +7,7 @@ from django.db import IntegrityError, transaction
 from catalog.models import Genre, Language, Loan
 from utils.choices import InstanceStatus, LoanStatus
 
-from .factories import (
+from helper.factories import (
     UserFactory,
     AuthorFactory,
     GenreFactory,

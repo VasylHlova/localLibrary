@@ -3,7 +3,7 @@ from datetime import date
 
 from utils.choices import InstanceStatus, LoanStatus
 from utils.image_proccess import ImageProcessingMixin
-from locallibrary.utils.image_proccess import GeneratePath
+from utils.image_proccess import GeneratePath
 from utils.validators import validate_file_size
 from django.conf import settings
 from django.core.exceptions import ValidationError

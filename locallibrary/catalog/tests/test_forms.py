@@ -10,13 +10,11 @@ from catalog.forms import (
     ChangeBookStatusForm,
     RenewBookForm,
 )
-from catalog.tests.factories import (
+from helper.factories import (
     UserFactory, 
     AvailableBookInstanceFactory, 
     OnLoanBookInstanceFactory
 )
-
-
 
 
 class RenewBookFormTest(TestCase):
@@ -132,7 +130,6 @@ class BorrowOrReserveBookFormTest(TestCase):
 
         self.assertEqual(saved_instance.status, InstanceStatus.ON_LOAN)
 
-        available_instance.refresh_from_db()
         self.assertEqual(available_instance.status, InstanceStatus.ON_LOAN)
         self.assertEqual(available_instance.borrower, user)
 

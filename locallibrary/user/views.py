@@ -6,8 +6,6 @@ from django.views.generic import DetailView, UpdateView
 from .forms import UpdateUserProfileForm
 from .models import CustomUser, UserProfile
 
-# Create your views here.
-
 
 class UserDetail(LoginRequiredMixin, DetailView):
     model = CustomUser
