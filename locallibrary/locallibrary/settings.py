@@ -247,3 +247,15 @@ CACHES = {
         },
     }
 }
+
+
+CELERY_BROKER_URL = 'redis://redis:6379/1'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/2'
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# 4. Додаткові корисні налаштування для продакшену
+CELERY_TIMEZONE = TIME_ZONE  # Беремо часовий пояс із налаштувань Django (важливо для Celery Beat)
+CELERY_TASK_TRACK_STARTED = True  # Дозволяє бачити статус 'STARTED' замість просто 'PENDING'
