@@ -54,6 +54,37 @@ services:
       - static_volume_dev:/app/locallibrary/static
       - media_volume_dev:/app/locallibrary/media
 
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/locallibrary
+    command: celery -A infrastructure worker -l info
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/locallibrary
+    command: celery -A infrastructure beat -l info
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+
 volumes:
   postgres_data_dev:
   static_volume_dev:

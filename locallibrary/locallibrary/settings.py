@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from celery.schedules import crontab
 
 load_dotenv()
 
@@ -29,6 +30,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG')
+
+SITE_URL = 'http://127.0.0.1:8000'
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
@@ -139,8 +142,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+
+DEFAULT_FROM_EMAIL = f"Library <{EMAIL_HOST_USER}>"
 
 # Social authentication
 AUTHENTICATION_BACKENDS = [
@@ -241,7 +251,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/1"),
+        "LOCATION": os.getenv("REDIS_URL_CACHE"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -249,13 +259,24 @@ CACHES = {
 }
 
 
-CELERY_BROKER_URL = 'redis://redis:6379/1'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/2'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-# 4. Додаткові корисні налаштування для продакшену
-CELERY_TIMEZONE = TIME_ZONE  # Беремо часовий пояс із налаштувань Django (важливо для Celery Beat)
-CELERY_TASK_TRACK_STARTED = True  # Дозволяє бачити статус 'STARTED' замість просто 'PENDING'
+CELERY_TIMEZONE = TIME_ZONE 
+CELERY_TASK_TRACK_STARTED = True  
+
+CELERY_BEAT_SCHEDULE = {
+    'send-reminders-daily': {
+        'task': 'catalog.check_expiring_loans',
+        'schedule': crontab(hour=8, minute=0),
+    },
+
+    'cleanup-reservations-daily': {
+        'task': 'catalog.update_status_on_exipiring_reservetion_date',
+        'schedule': crontab(hour=1, minute=0), 
+    },
+}

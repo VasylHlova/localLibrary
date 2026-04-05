@@ -24,6 +24,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+    working_dir: /app/locallibrary
     ports:
       - "8000:8000"
     env_file:
@@ -34,6 +35,35 @@ services:
     volumes:
       - static_volume_prod:/app/locallibrary/static
       - media_volume_prod:/app/locallibrary/media
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    working_dir: /app/locallibrary
+    command: celery -A infrastructure worker -l info
+    restart: always
+    env_file:
+      - .env.prod
+    depends_on:
+      prod_db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: celery -A infrastructure beat -l info
+    restart: always
+    env_file:
+      - .env.prod
+    depends_on:
+      prod_db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
 volumes:
   postgres_data_prod:
