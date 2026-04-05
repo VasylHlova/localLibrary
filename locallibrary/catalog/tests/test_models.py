@@ -72,7 +72,7 @@ class AuthorModelTest(TestCase):
         )
         author.full_clean()
 
-    def test_full_clean_passes_when_photo_has_valid_extension(self):
+    def test_full_clean_passes_when_image_has_valid_extension(self):
         for ext, fmt, content_type in [
             ("jpg", "JPEG", "image/jpeg"),
             ("jpeg", "JPEG", "image/jpeg"),
@@ -81,30 +81,30 @@ class AuthorModelTest(TestCase):
         ]:
             with self.subTest(ext=ext):
                 author = AuthorFactory.build(
-                    photo=ImageFactory.create(name=f"test.{ext}", format=fmt, content_type=content_type)
+                    image=ImageFactory.create(name=f"test.{ext}", format=fmt, content_type=content_type)
                 )
                 author.full_clean()
 
-    def test_full_clean_raises_error_when_photo_has_invalid_extension(self):
-        author = AuthorFactory.build(photo=ImageFactory.create_invalid_extension())
+    def test_full_clean_raises_error_when_image_has_invalid_extension(self):
+        author = AuthorFactory.build(image=ImageFactory.create_invalid_extension())
 
         with self.assertRaises(ValidationError) as context:
             author.full_clean()
 
-        self.assertIn("photo", context.exception.message_dict)
-        self.assertIn("Invalid file extension", context.exception.message_dict["photo"][0])
+        self.assertIn("image", context.exception.message_dict)
+        self.assertIn("Invalid file extension", context.exception.message_dict["image"][0])
 
-    def test_full_clean_raises_error_when_photo_exceeds_max_size(self):
-        author = AuthorFactory.build(photo=ImageFactory.create_oversized())
+    def test_full_clean_raises_error_when_image_exceeds_max_size(self):
+        author = AuthorFactory.build(image=ImageFactory.create_oversized())
 
         with self.assertRaises(ValidationError) as context:
             author.full_clean()
 
-        self.assertIn("photo", context.exception.message_dict)
-        self.assertIn("Exceeded max file size(20MB)", context.exception.message_dict["photo"])
+        self.assertIn("image", context.exception.message_dict)
+        self.assertIn("Exceeded max file size(20MB)", context.exception.message_dict["image"])
         
-    def test_full_clean_passes_when_photo_is_none(self):
-        author = AuthorFactory.build(photo=None)
+    def test_full_clean_passes_when_image_is_none(self):
+        author = AuthorFactory.build(image=None)
         author.full_clean()
 
 
@@ -153,7 +153,7 @@ class BookModelTest(TestCase):
         result = self.book.display_genre()
         self.assertEqual(len(result.split(", ")), 3)
 
-    def test_full_clean_passes_when_photo_has_valid_extension(self):
+    def test_full_clean_passes_when_image_has_valid_extension(self):
         author = AuthorFactory()
         language = LanguageFactory()
         
@@ -167,41 +167,41 @@ class BookModelTest(TestCase):
                 book = BookFactory.build(
                     author=author,
                     language=language,
-                    photo=ImageFactory.create(name=f"test.{ext}", format=fmt, content_type=content_type)
+                    image=ImageFactory.create(name=f"test.{ext}", format=fmt, content_type=content_type)
                 )
                 book.full_clean()
 
-    def test_full_clean_raises_error_when_photo_has_invalid_extension(self):
+    def test_full_clean_raises_error_when_image_has_invalid_extension(self):
         book = BookFactory.build(
             author=AuthorFactory(),
             language=LanguageFactory(),
-            photo=ImageFactory.create_invalid_extension()
+            image=ImageFactory.create_invalid_extension()
         )
 
         with self.assertRaises(ValidationError) as context:
             book.full_clean()
 
-        self.assertIn("photo", context.exception.message_dict)
-        self.assertIn("Invalid file extension", context.exception.message_dict["photo"][0])
+        self.assertIn("image", context.exception.message_dict)
+        self.assertIn("Invalid file extension", context.exception.message_dict["image"][0])
 
-    def test_full_clean_raises_error_when_photo_exceeds_max_size(self):
+    def test_full_clean_raises_error_when_image_exceeds_max_size(self):
         book = BookFactory.build(
             author=AuthorFactory(),
             language=LanguageFactory(),
-            photo=ImageFactory.create_oversized()
+            image=ImageFactory.create_oversized()
         )
 
         with self.assertRaises(ValidationError) as context:
             book.full_clean()
 
-        self.assertIn("photo", context.exception.message_dict)
-        self.assertIn("Exceeded max file size(20MB)", context.exception.message_dict["photo"])
+        self.assertIn("image", context.exception.message_dict)
+        self.assertIn("Exceeded max file size(20MB)", context.exception.message_dict["image"])
 
-    def test_full_clean_passes_when_photo_is_none(self):
+    def test_full_clean_passes_when_image_is_none(self):
         book = BookFactory.build(
             author=AuthorFactory(),
             language=LanguageFactory(),
-            photo=None
+            image=None
         )
         book.full_clean()
 

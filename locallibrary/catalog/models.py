@@ -73,7 +73,7 @@ class Book(ImageProcessingMixin, models.Model):
         on_delete=models.PROTECT,
         related_name="books",
     )
-    photo = models.ImageField(
+    image = models.ImageField(
         upload_to=GeneratePath("book"),
         blank=True,
         null=True,
@@ -184,7 +184,7 @@ class Author(ImageProcessingMixin, models.Model):
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField("born", null=True, blank=True)
     date_of_death = models.DateField("died", null=True, blank=True)
-    photo = models.ImageField(
+    image = models.ImageField(
         upload_to=GeneratePath("authors"),
         blank=True,
         null=True,

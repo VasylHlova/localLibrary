@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import uuid4
 
 from utils.choices import InstanceStatus
 from utils.cache import VersionedCacheListMixin
@@ -56,7 +57,7 @@ class AuthorDetailView(DetailView):
 
 class AuthorCreate(PermissionRequiredMixin, CreateView):
     model = Author
-    fields = ["first_name", "last_name", "date_of_birth", "date_of_death", "photo"]
+    fields = ["first_name", "last_name", "date_of_birth", "date_of_death", "image"]
     initial = {"date_of_birth": "31.12.2020"}
     permission_required = "catalog.add_author"
 
@@ -94,7 +95,7 @@ class BookDetailView(DetailView):
 
 class BookCreate(PermissionRequiredMixin, CreateView):
     model = Book
-    fields = ["title", "author", "summary", "isbn", "genre", "photo", 'language']
+    fields = ["title", "author", "summary", "isbn", "genre", "image", 'language']
     permission_required = "catalog.add_book"
 
 
@@ -193,7 +194,7 @@ class ChangeBookInstanceStatus(PermissionRequiredMixin, UpdateView):
 @login_required
 @permission_required(perm="catalog.can_mark_returned", raise_exception=True)
 @require_POST
-def return_bookinstance(request, pk):
+def return_bookinstance(request, pk: uuid4) -> None:
     instance = get_object_or_404(BookInstance, pk=pk)
 
     try:

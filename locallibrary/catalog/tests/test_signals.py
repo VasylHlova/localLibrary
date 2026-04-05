@@ -1,121 +1,119 @@
 import catalog.signals
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.test import TestCase
 
 from .helper.factories import AuthorFactory, BookFactory, BookInstanceFactory, LanguageFactory
 
 
-class CleanupPhotoOnDeleteSignalTest(TestCase):
-    @patch('django.db.transaction.on_commit')
-    def test_deletes_author_photo_on_delete(self, mock_on_commit):
+class CleanupImageOnDeleteSignalTest(TestCase):
+    
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_deletes_author_image_on_delete(self, mock_delay):
         author = AuthorFactory()
-        mock_on_commit.reset_mock()
 
-        mock_photo = MagicMock()
-        mock_photo.name = "dummy.jpg"
-        author.photo = mock_photo
-
-        author.delete()
-
-        mock_on_commit.assert_called_once()
-        callback = mock_on_commit.call_args[0][0]
-        callback()
-        mock_photo.delete.assert_called_once_with(save=False)
-
-    @patch('django.db.transaction.on_commit')
-    def test_deletes_book_photo_on_delete(self, mock_on_commit):
-        book = BookFactory()
-        mock_on_commit.reset_mock()
-
-        mock_photo = MagicMock()
-        mock_photo.name = "dummy.jpg"
-        book.photo = mock_photo
-
-        book.delete()
-
-        mock_on_commit.assert_called_once()
-        callback = mock_on_commit.call_args[0][0]
-        callback()
-        mock_photo.delete.assert_called_once_with(save=False)
-
-    def test_does_not_fail_when_author_has_no_photo(self):
-        author = AuthorFactory(photo=None)
-        author.delete()
-
-    def test_does_not_fail_when_book_has_no_photo(self):
-        book = BookFactory(photo=None)
-        book.delete()
-
-
-class CleanupOldPhotoOnUpdateSignalTest(TestCase):
-    @patch('django.db.transaction.on_commit')
-    @patch('catalog.models.Author.objects.get')
-    def test_deletes_old_author_photo_when_replaced(self, mock_get, mock_on_commit):
-        author = AuthorFactory()
-        mock_on_commit.reset_mock()
-
-        mock_old_instance = MagicMock()
-        mock_old_instance.photo = MagicMock()
-        mock_old_instance.photo.name = "dummy.jpg"
-        mock_get.return_value = mock_old_instance
-
-        author.photo = "new_dummy.jpg"
+        author.image = "authors/dummy.jpg"
         author.save()
 
-        mock_on_commit.assert_called_once()
-        callback = mock_on_commit.call_args[0][0]
-        callback()
-        mock_old_instance.photo.delete.assert_called_once_with(save=False)
+        author.delete()
 
-    @patch('django.db.transaction.on_commit')
-    @patch('catalog.models.Book.objects.get')
-    def test_deletes_old_book_photo_when_replaced(self, mock_get, mock_on_commit):
+        mock_delay.assert_called_once_with(file_path="authors/dummy.jpg")
+
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_deletes_book_image_on_delete(self, mock_delay):
         book = BookFactory()
-        mock_on_commit.reset_mock()
 
-        mock_old_instance = MagicMock()
-        mock_old_instance.photo = MagicMock()
-        mock_old_instance.photo.name = "dummy.jpg"
-        mock_get.return_value = mock_old_instance
-
-        book.photo = "new_dummy.jpg"
+        book.image = "books/dummy.jpg"
         book.save()
 
-        mock_on_commit.assert_called_once()
-        callback = mock_on_commit.call_args[0][0]
-        callback()
-        mock_old_instance.photo.delete.assert_called_once_with(save=False)
+        book.delete()
 
-    @patch('django.db.transaction.on_commit')
-    def test_does_not_delete_author_photo_when_other_field_updated(self, mock_on_commit):
+        mock_delay.assert_called_once_with(file_path="books/dummy.jpg")
+
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_does_not_fail_when_author_has_no_image(self, mock_delay):
+        author = AuthorFactory(image=None)
+        author.delete()
+        
+        mock_delay.assert_not_called()
+
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_does_not_fail_when_book_has_no_image(self, mock_delay):
+        book = BookFactory(image=None)
+        book.delete()
+        
+        mock_delay.assert_not_called()
+
+
+class CleanupOldImageOnUpdateSignalTest(TestCase):
+    
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_deletes_old_author_image_when_replaced(self, mock_delay):
         author = AuthorFactory()
-        mock_on_commit.reset_mock()
+        
+        author.image = "authors/old_dummy.jpg"
+        author.save()
+
+        author.image = "authors/new_dummy.jpg"
+        author.save()
+
+        mock_delay.assert_called_once_with(file_path="authors/old_dummy.jpg")
+
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_deletes_old_book_image_when_replaced(self, mock_delay):
+        book = BookFactory()
+
+        book.image = "books/old_dummy.jpg"
+        book.save()
+
+        book.image = "books/new_dummy.jpg"
+        book.save()
+
+        mock_delay.assert_called_once_with(file_path="books/old_dummy.jpg")
+
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_does_not_delete_author_image_when_other_field_updated(self, mock_delay):
+        author = AuthorFactory()
+        
+        author.image = "authors/dummy.jpg"
+        author.save()
+
+        mock_delay.reset_mock()
 
         author.first_name = "Updated"
         author.save()
 
-        mock_on_commit.assert_not_called()
+        mock_delay.assert_not_called()
 
-    @patch('django.db.transaction.on_commit')
-    def test_does_not_delete_book_photo_when_other_field_updated(self, mock_on_commit):
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_does_not_delete_book_image_when_other_field_updated(self, mock_delay):
         book = BookFactory()
-        mock_on_commit.reset_mock()
+        
+        book.image = "books/dummy.jpg"
+        book.save()
+
+        mock_delay.reset_mock()
 
         book.title = "Updated Title"
         book.save()
 
-        mock_on_commit.assert_not_called()
+        mock_delay.assert_not_called()
 
-    def test_skips_cleanup_for_new_author_instance(self):
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_skips_cleanup_for_new_author_instance(self, mock_delay):
         author = AuthorFactory.build()
         author.save()
+        
+        mock_delay.assert_not_called()
 
-    def test_skips_cleanup_for_new_book_instance(self):
+    @patch('catalog.signals.cleanup_needless_images.delay')
+    def test_skips_cleanup_for_new_book_instance(self, mock_delay):
         author = AuthorFactory()
         language = LanguageFactory()
         book = BookFactory.build(author=author, language=language)
         book.save()
+        
+        mock_delay.assert_not_called()
 
 
 class InvalidateCacheSignalTest(TestCase):
