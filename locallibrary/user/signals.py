@@ -6,6 +6,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from .models import CustomUser, UserProfile
+from .tasks.profile_picture_tasks import cleanup_needless_profile_picture
 
 User = get_user_model()
 
@@ -19,10 +20,10 @@ def cleanup_profile_picture_on_delete(sender: type[CustomUser], instance: Custom
 
     if old_instance.is_active and not instance.is_active:
         if instance.profile.profile_picture:
-            transaction.on_commit(lambda: instance.profile.profile_picture.delete(save=False))
+            cleanup_needless_profile_picture.delay(file_path=instance.profile.profile_picture.name)
 
 
-@receiver(pre_save, sender="user.UserProfile")
+@receiver(pre_save, sender=UserProfile)
 def cleanup_old_profile_photo_on_update(
     sender: type[UserProfile], instance: UserProfile, **kwargs: Any
 ) -> None:
@@ -32,7 +33,7 @@ def cleanup_old_profile_photo_on_update(
     old_instance = sender.objects.get(pk=instance.pk)
 
     if old_instance.profile_picture and old_instance.profile_picture != instance.profile_picture:
-        transaction.on_commit(lambda: old_instance.profile_picture.delete(save=False))
+            cleanup_needless_profile_picture.delay(file_path=old_instance.profile_picture.name)
 
 
 @receiver(post_save, sender=User)
