@@ -18,26 +18,32 @@
                                     </a>
                                 </h5>
                                 <h6 class="card-subtitle text-muted mb-2">
-                                    Автор: {{ bookinst.book.author }}
+                                    Author: {{ bookinst.book.author }}
                                 </h6>
                                 
                                 <small class="{% if bookinst.is_overdue %}text-danger fw-bold{% else %}text-muted{% endif %}">
                                     <i class="bi bi-calendar-event"></i> 
-                                    Повернути до: {{ bookinst.due_back }}
+                                    Due back date: {{ bookinst.due_back }}
                                 </small>
                             </div>
 
                             <div class="text-end">
-                                {% if bookinst.is_overdue %}
-                                    <span class="badge bg-danger mb-2 d-block">Overdue</span>
-                                    <a href="{{ bookinst.book.get_absolute_url }}" class="btn btn-outline-danger btn-sm">
-                                        View
+                                {%if bookinst.status == 'o'%}
+                                    <a href="{% url 'bookinstance-borrow-reserved' bookinst.id %}" class="btn btn-outline-primary btn-sm">
+                                        Borrow
                                     </a>
-                                {% else %}
-                                    <span class="badge bg-success mb-2 d-block">Borrowed</span>
-                                    <a href="{{ bookinst.book.get_absolute_url }}" class="btn btn-outline-primary btn-sm">
-                                        View
-                                    </a>
+                                {%else%}
+                                    {% if bookinst.is_overdue %}
+                                        <span class="badge bg-danger mb-2 d-block">Overdue</span>
+                                        <a href="{{ bookinst.book.get_absolute_url }}" class="btn btn-outline-danger btn-sm">
+                                            View
+                                        </a>
+                                    {% else %}
+                                        <span class="badge bg-success mb-2 d-block">Borrowed</span>
+                                        <a href="{{ bookinst.book.get_absolute_url }}" class="btn btn-outline-primary btn-sm">
+                                            View
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
 

@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import BookInstance
 
 
-class RenewBookForm(forms.ModelForm):
+class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
     due_back = forms.DateField(
         help_text="Enter a date between now and 4 weeks (default 3).",
         validators=[validate_future_date, validate_term_limit],
@@ -19,8 +19,25 @@ class RenewBookForm(forms.ModelForm):
         model = BookInstance
         fields = ["due_back"]
 
+    def __init__(self, *args, **kwargs):
+        self.desired_statuses = kwargs.pop(
+            'desired_statuses', 
+            getattr(self, 'desired_statuses', [])
+        )
+        super().__init__(*args, **kwargs)
 
-class BaseBookInstanceForm(forms.ModelForm):
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+
+        if self.instance.pk:
+            current_status = BookInstance.objects.filter(pk=self.instance.pk).values_list("status", flat=True).first()
+            if current_status and current_status not in self.desired_statuses:
+                raise ValidationError(_(f"This book has bad status({current_status}) for this action!"))
+
+        return cleaned_data
+
+
+class ChangeBookInstanceStatusDueBackBaseForm(forms.ModelForm):
     class Meta:
         model = BookInstance
         fields = ["status", "due_back"]
@@ -32,7 +49,7 @@ class BaseBookInstanceForm(forms.ModelForm):
 
         return data
 
-    def clean(self):
+    def clean(self)-> dict:
         cleaned_data = super().clean()
 
         status_data = self.cleaned_data.get("status")
@@ -48,7 +65,30 @@ class BaseBookInstanceForm(forms.ModelForm):
         return cleaned_data
 
 
-class BorrowOrReserveBookForm(BaseBookInstanceForm):
+class RenewBookForm(ChangeBookInstanceDueBackBaseForm):
+    desired_statuses = [InstanceStatus.RESERVED, InstanceStatus.ON_LOAN]
+
+
+class BorrowReservedBookForm(ChangeBookInstanceDueBackBaseForm):
+    desired_statuses = [InstanceStatus.RESERVED]
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit: bool = True) -> BookInstance:
+        instance = super().save(commit=False)
+
+        due_back = self.cleaned_data.get("due_back")
+        status = InstanceStatus.ON_LOAN
+
+        if commit:
+            instance.borrow_book(self.user, due_back, status)
+
+        return instance
+
+
+class BorrowOrReserveBookForm(ChangeBookInstanceStatusDueBackBaseForm):
     STATUS_CHOICES = (
         (InstanceStatus.ON_LOAN, "Borrow"),
         (InstanceStatus.RESERVED, "Reserve"),
@@ -56,7 +96,7 @@ class BorrowOrReserveBookForm(BaseBookInstanceForm):
 
     status = forms.ChoiceField(choices=STATUS_CHOICES, label="What do you wish?", widget=forms.RadioSelect)
 
-    class Meta(BaseBookInstanceForm.Meta):
+    class Meta(ChangeBookInstanceStatusDueBackBaseForm.Meta):
         widgets = {
             "due_back": forms.DateInput(
                 attrs={
@@ -91,7 +131,7 @@ class BorrowOrReserveBookForm(BaseBookInstanceForm):
         return instance
 
 
-class ChangeBookStatusForm(BaseBookInstanceForm):
+class ChangeBookStatusForm(ChangeBookInstanceStatusDueBackBaseForm):
     def clean(self) -> dict:
         cleaned_data = super().clean()
 

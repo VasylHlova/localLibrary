@@ -15,8 +15,16 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
-from .forms import BorrowOrReserveBookForm, ChangeBookStatusForm, RenewBookForm
-from .models import Author, Book, BookInstance
+from .forms import (
+    BorrowOrReserveBookForm, 
+    ChangeBookStatusForm,
+    BorrowReservedBookForm, 
+    RenewBookForm,
+)
+from .models import (
+    Author, Book, 
+    BookInstance,
+)
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -159,6 +167,18 @@ class RenewBookInstanceLibrarian(LoginRequiredMixin,PermissionRequiredMixin, Upd
     permission_required = "catalog.change_bookinstance"
 
 
+class BorrowReservedBookInstance(LoginRequiredMixin, UpdateView):
+    model = BookInstance
+    form_class = BorrowReservedBookForm
+    template_name = "catalog/book_borrow_reserved.html"
+    success_url = reverse_lazy("my-borrowed")
+
+    def get_form_kwargs(self) -> dict[str, Any]:
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+
 class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):
     model = BookInstance
     form_class = BorrowOrReserveBookForm
@@ -179,8 +199,7 @@ class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self) -> str:
         return reverse("my-borrowed")
-
-
+    
 class ChangeBookInstanceStatus(PermissionRequiredMixin, UpdateView):
     model = BookInstance
     form_class = ChangeBookStatusForm
