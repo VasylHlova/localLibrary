@@ -103,6 +103,12 @@ class AvailableBookInstanceFactory(BookInstanceFactory):
     status = InstanceStatus.AVAILABLE
 
 
+class ReservedBookInstanceFactory(BookInstanceFactory):
+    status = InstanceStatus.RESERVED
+    due_back = factory.LazyFunction(lambda: date.today() + timedelta(weeks=1))
+    borrower = factory.SubFactory(UserFactory)
+
+
 class OnLoanBookInstanceFactory(BookInstanceFactory):
     status = InstanceStatus.ON_LOAN
     due_back = factory.LazyFunction(lambda: date.today() + timedelta(weeks=2))

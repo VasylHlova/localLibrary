@@ -15,6 +15,7 @@ from ..helper.mixins import PermissionViewTestMixin
 from ..helper.factories import (
     AvailableBookInstanceFactory,
     OnLoanBookInstanceFactory,
+    ReservedBookInstanceFactory,
     UserFactory, 
     BookInstanceFactory
 )
@@ -276,6 +277,106 @@ class RenewBookInstancesViewTest(PermissionViewTestMixin, TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertFormError(response.context["form"], "due_back", "Invalid date - renewal in past!")
+
+    def test_form_invalid_status(self):
+        bookinstance = AvailableBookInstanceFactory()
+        valid_date = datetime.date.today() - datetime.timedelta(weeks=1)
+
+        self.client.force_login(self.user_with_perms)
+        response = self.client.post(
+            reverse(
+                "bookinstance-renew",
+                kwargs={
+                    "pk": bookinstance.pk,
+                },
+            ),
+            {"due_back": valid_date},
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertFormError(response.context["form"], None, "This book has bad status(a) for this action!")
+
+
+class BorrowReservedBookInstancesViewTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = UserFactory()
+        cls.read_only_bookinstance = ReservedBookInstanceFactory()
+
+        cls.url = reverse("bookinstance-borrow-reserved", kwargs={"pk": cls.read_only_bookinstance.pk})
+
+
+    def test_redirects_to_login_if_anonymous(self):
+        response = self.client.get(self.url)
+        self.assertRedirects(response, f"/accounts/login/?next={self.url}")
+
+
+    def test_returns_200_if_logged_in(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_HTTP404_for_invalid_book_if_logged_in(self):
+        test_uid = uuid.uuid4()
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("bookinstance-borrow-reserved", kwargs={"pk": test_uid}))
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+
+    def test_uses_correct_template(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTemplateUsed(response, "catalog/book_borrow_reserved.html")
+
+    def test_redirects_to_all_borrowed_book_list_on_success(self):
+        bookinstance_to_borrow = ReservedBookInstanceFactory()
+        valid_date = datetime.date.today() + datetime.timedelta(weeks=2)
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse(
+                "bookinstance-borrow-reserved",
+                kwargs={
+                    "pk": bookinstance_to_borrow.pk,
+                },
+            ),
+            {"due_back": valid_date.strftime('%Y-%m-%d')}
+        )
+        self.assertRedirects(response, reverse("my-borrowed"))
+
+    def test_form_invalid_due_back_date(self):
+        bookinstance = ReservedBookInstanceFactory()
+        invalid_date = datetime.date.today() - datetime.timedelta(weeks=4)
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse(
+                "bookinstance-borrow-reserved",
+                kwargs={
+                    "pk": bookinstance.pk,
+                },
+            ),
+            {"due_back": invalid_date},
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertFormError(response.context["form"], "due_back", "Invalid date - renewal in past!")
+
+    def test_form_invalid_status(self):
+        bookinstance = AvailableBookInstanceFactory()
+        valid_date = datetime.date.today() + datetime.timedelta(weeks=1)
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse(
+                "bookinstance-borrow-reserved",
+                kwargs={
+                    "pk": bookinstance.pk,
+                },
+            ),
+            {"due_back": valid_date},
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertFormError(response.context["form"], None, "This book has bad status(a) for this action!")
 
 
 class BorrowOrReserveBookInstanceViewTest(TestCase):
