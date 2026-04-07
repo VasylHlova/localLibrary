@@ -156,20 +156,22 @@ class BookInstance(models.Model):
         self.borrower = user
         self.due_back = due_back
         self.save()
-
-        Loan.objects.create(book_instance=self, borrower=user, status=LoanStatus.ACTIVE)
+        
+        if status == InstanceStatus.ON_LOAN:
+            Loan.objects.create(book_instance=self, borrower=user, status=LoanStatus.ACTIVE)
 
     @transaction.atomic
     def return_book(self) -> None:
         if self.status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
             return
+        
+        if self.status == InstanceStatus.ON_LOAN:
+            active_loan = (
+                Loan.objects.filter(book_instance=self, returned_at__isnull=True).select_for_update().first()
+            )
 
-        active_loan = (
-            Loan.objects.filter(book_instance=self, returned_at__isnull=True).select_for_update().first()
-        )
-
-        if active_loan:
-            active_loan.close_loan()
+            if active_loan:
+                active_loan.close_loan()
 
         self.status = InstanceStatus.AVAILABLE
         self.borrower = None

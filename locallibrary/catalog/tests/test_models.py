@@ -321,7 +321,7 @@ class BookInstanceModelTest(TestCase):
             ).exists()
         )
 
-    def test_borrow_book_when_status_reserved_updates_instance_and_creates_loan(self):
+    def test_borrow_book_when_status_reserved_updates_instance_and_not_creates_loan(self):
         user = UserFactory()
         instance = AvailableBookInstanceFactory()
         due_back = date.today() + timedelta(weeks=2)
@@ -329,7 +329,7 @@ class BookInstanceModelTest(TestCase):
         instance.borrow_book(user=user, due_back=due_back, status=InstanceStatus.RESERVED)
 
         self.assertEqual(instance.status, InstanceStatus.RESERVED)
-        self.assertTrue(
+        self.assertFalse(
             Loan.objects.filter(book_instance=instance, status=LoanStatus.ACTIVE).exists()
         )
 
