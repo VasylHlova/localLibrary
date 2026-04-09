@@ -24,6 +24,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    command: sh -c "python locallibrary/manage.py migrate && python locallibrary/manage.py seed_db && python locallibrary/manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
     env_file:

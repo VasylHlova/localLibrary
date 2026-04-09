@@ -29,6 +29,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "django-silk>=5.5.0",
+    "faker>=40.11.1",
     "ruff>=0.15.7",
 ]
 

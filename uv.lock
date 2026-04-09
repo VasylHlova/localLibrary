@@ -528,6 +528,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "django-silk" },
+    { name = "faker" },
     { name = "ruff" },
 ]
 
@@ -552,6 +553,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "django-silk", specifier = ">=5.5.0" },
+    { name = "faker", specifier = ">=40.11.1" },
     { name = "ruff", specifier = ">=0.15.7" },
 ]
 
