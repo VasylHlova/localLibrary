@@ -62,6 +62,9 @@ class AuthorListView(VersionedCacheListMixin, ListView):
 class AuthorDetailView(DetailView):
     model = Author
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('books__instances')
+
 
 class AuthorCreate(PermissionRequiredMixin, CreateView):
     model = Author
@@ -99,6 +102,9 @@ class BookListView(VersionedCacheListMixin, ListView):
 
 class BookDetailView(DetailView):
     model = Book
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('author', 'language').prefetch_related('instances', 'genre')
 
 
 class BookCreate(PermissionRequiredMixin, CreateView):
@@ -138,7 +144,7 @@ class LoanBookInstanceByUserListView(LoginRequiredMixin, VersionedCacheListMixin
 
     def get_queryset(self) -> QuerySet[BookInstance]:
         return (
-            BookInstance.objects.select_related("book", "borrower")
+            BookInstance.objects.select_related("book__author", "borrower")
             .filter(borrower=self.request.user)
             .filter(Q(status=InstanceStatus.ON_LOAN) | Q(status=InstanceStatus.RESERVED))
             .order_by("due_back")
@@ -153,7 +159,7 @@ class LoanBookInstanceListView(LoginRequiredMixin, PermissionRequiredMixin, Vers
 
     def get_queryset(self) -> QuerySet[BookInstance]:
         return (
-            BookInstance.objects.select_related("book", "borrower")
+            BookInstance.objects.select_related("book__author", "borrower")
             .filter(Q(status=InstanceStatus.ON_LOAN) | Q(status=InstanceStatus.RESERVED))
             .order_by("due_back")
         )
