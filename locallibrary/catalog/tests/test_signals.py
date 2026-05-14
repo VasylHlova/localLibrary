@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from .helper.factories import AuthorFactory, BookFactory, BookInstanceFactory, LanguageFactory
+from catalog.tests.helper.factories import AuthorFactory, BookFactory, BookInstanceFactory, LanguageFactory
 
 
 class CleanupImageOnDeleteSignalTest(TestCase):

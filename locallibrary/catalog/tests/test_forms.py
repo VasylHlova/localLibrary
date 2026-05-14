@@ -1,8 +1,8 @@
 import datetime
 
-from utils.choices import InstanceStatus
 from django.test import TestCase
 
+from utils.choices import InstanceStatus
 from catalog.models import  Loan
 from catalog.forms import (
     ChangeBookInstanceStatusDueBackBaseForm,
@@ -12,7 +12,7 @@ from catalog.forms import (
     RenewBookForm,
     BorrowReservedBookForm,
 )
-from .helper.factories import (
+from catalog.tests.helper.factories import (
     UserFactory, 
     AvailableBookInstanceFactory, 
     OnLoanBookInstanceFactory,
@@ -136,29 +136,6 @@ class BorrowReservedBookFormTest(TestCase):
             form.errors["__all__"][0]
         )
 
-    def test_form_save_changes_status_and_creates_loan(self):
-        form = BorrowReservedBookForm(
-            data={"due_back": self.valid_date}, 
-            instance=self.reserved_instance
-        )
-        form.user = self.user
-        
-        self.assertTrue(form.is_valid()) 
-        
-        saved_instance = form.save()
-
-        self.assertEqual(saved_instance.status, InstanceStatus.ON_LOAN)
-        self.assertEqual(saved_instance.due_back, self.valid_date)
-
-        self.reserved_instance.refresh_from_db()
-        self.assertEqual(self.reserved_instance.status, InstanceStatus.ON_LOAN)
-
-        history_exists = Loan.objects.filter(
-            book_instance=self.reserved_instance, 
-            borrower=self.user
-        ).exists()
-        self.assertTrue(history_exists, "Запис в історії позичань має бути створений після видачі зарезервованої книги")
-
 
 class ChangeBookInstanceStatusDueBackBaseFormTest(TestCase):
     def test_past_due_date_is_invalid(self):
@@ -225,7 +202,6 @@ class BorrowOrReserveBookFormTest(TestCase):
         self.assertEqual(form.non_field_errors()[0], "This book is not available!")
 
     def test_can_borrow_available_book(self):
-        user = UserFactory()
         available_instance = AvailableBookInstanceFactory()
 
         form_data = {
@@ -234,19 +210,6 @@ class BorrowOrReserveBookFormTest(TestCase):
         }
 
         form = BorrowOrReserveBookForm(data=form_data, instance=available_instance)
-        form.user = user
 
         self.assertTrue(form.is_valid())
 
-        saved_instance = form.save()
-
-        self.assertEqual(saved_instance.status, InstanceStatus.ON_LOAN)
-
-        self.assertEqual(available_instance.status, InstanceStatus.ON_LOAN)
-        self.assertEqual(available_instance.borrower, user)
-
-        history_exists = Loan.objects.filter(
-            book_instance=available_instance, 
-            borrower=user
-        ).exists()
-        self.assertTrue(history_exists, "Запис в історії позичань має бути створений")

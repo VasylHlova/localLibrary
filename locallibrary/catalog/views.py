@@ -15,15 +15,19 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
-from .forms import (
+from catalog.forms import (
     BorrowOrReserveBookForm, 
     ChangeBookStatusForm,
     BorrowReservedBookForm, 
     RenewBookForm,
 )
-from .models import (
+from catalog.models import (
     Author, Book, 
     BookInstance,
+)
+from catalog.services import (
+    borrow_book,
+    return_book,
 )
 
 
@@ -179,11 +183,14 @@ class BorrowReservedBookInstance(LoginRequiredMixin, UpdateView):
     template_name = "catalog/book_borrow_reserved.html"
     success_url = reverse_lazy("my-borrowed")
 
-    def get_form_kwargs(self) -> dict[str, Any]:
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
-
+    def form_valid(self, form: Form) -> HttpResponse:
+        borrow_book(
+            book_instance=self.object,
+            user=self.request.user,
+            due_back=form.cleaned_data.get("due_back"),
+            status=InstanceStatus.ON_LOAN
+        )
+        return super().form_valid(form)
 
 class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):
     model = BookInstance
@@ -198,13 +205,17 @@ class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):
             queryset = queryset.select_for_update()
         return super().get_object(queryset)
 
-    def get_form_kwargs(self) -> dict[str, Any]:
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
-
     def get_success_url(self) -> str:
         return reverse("my-borrowed")
+    
+    def form_valid(self, form: Form) -> HttpResponse:
+        borrow_book(
+            book_instance=self.object,
+            user=self.request.user,
+            due_back=form.cleaned_data.get("due_back"),
+            status=form.cleaned_data.get("status")
+        )
+        return super().form_valid(form)
     
 class ChangeBookInstanceStatus(PermissionRequiredMixin, UpdateView):
     model = BookInstance
@@ -223,7 +234,7 @@ def return_bookinstance(request, pk: uuid4) -> None:
     instance = get_object_or_404(BookInstance, pk=pk)
 
     try:
-        instance.return_book()
+        return_book(book_instance=instance)
         messages.success(request, f"Book '{instance.book.title}' ({instance.id}) successfuly returned.")
     except Exception as e:
         messages.error(request, f"Error during returning: {e}")

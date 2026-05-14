@@ -5,14 +5,14 @@ from utils.choices import InstanceStatus, LoanStatus
 from utils.image_proccess import ImageProcessingMixin
 from utils.image_proccess import GeneratePath
 from utils.validators import validate_file_size
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from django.db import models, transaction
+from django.db import models
 from django.db.models import UniqueConstraint, Q, CheckConstraint
 from django.db.models.functions import Lower
 from django.urls import reverse
-from user.models import CustomUser
 
 
 class Genre(models.Model):
@@ -147,36 +147,6 @@ class BookInstance(models.Model):
     def is_overdue(self) -> bool:
         return bool(self.due_back and date.today() > self.due_back)
 
-    @transaction.atomic
-    def borrow_book(self, user: CustomUser, due_back: int, status: InstanceStatus) -> None:
-        if status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
-            return
-        
-        self.status = status
-        self.borrower = user
-        self.due_back = due_back
-        self.save()
-        
-        if status == InstanceStatus.ON_LOAN:
-            Loan.objects.create(book_instance=self, borrower=user, status=LoanStatus.ACTIVE)
-
-    @transaction.atomic
-    def return_book(self) -> None:
-        if self.status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
-            return
-        
-        if self.status == InstanceStatus.ON_LOAN:
-            active_loan = (
-                Loan.objects.filter(book_instance=self, returned_at__isnull=True).select_for_update().first()
-            )
-
-            if active_loan:
-                active_loan.close_loan()
-
-        self.status = InstanceStatus.AVAILABLE
-        self.borrower = None
-        self.due_back = None
-        self.save()
 
 
 class Author(ImageProcessingMixin, models.Model):
@@ -240,17 +210,3 @@ class Loan(models.Model):
 
     def __str__(self):
         return f'{self.borrower.first_name} {self.borrower.last_name}, loan status: {self.status}'
-
-    def close_loan(self) -> None:
-        self.status = LoanStatus.RETURNED
-        self.returned_at = date.today()
-
-        if self.book_instance.due_back < self.returned_at:
-            delta = self.returned_at - self.book_instance.due_back
-
-            self.is_overdue = True
-            self.overdue_days = delta.days
-        else:
-            self.is_overdue = False
-
-        self.save()

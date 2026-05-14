@@ -6,7 +6,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from .models import BookInstance
+from catalog.models import BookInstance
 
 
 class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
@@ -72,21 +72,6 @@ class RenewBookForm(ChangeBookInstanceDueBackBaseForm):
 class BorrowReservedBookForm(ChangeBookInstanceDueBackBaseForm):
     desired_statuses = [InstanceStatus.RESERVED]
 
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user", None)
-        super().__init__(*args, **kwargs)
-
-    def save(self, commit: bool = True) -> BookInstance:
-        instance = super().save(commit=False)
-
-        due_back = self.cleaned_data.get("due_back")
-        status = InstanceStatus.ON_LOAN
-
-        if commit:
-            instance.borrow_book(self.user, due_back, status)
-
-        return instance
-
 
 class BorrowOrReserveBookForm(ChangeBookInstanceStatusDueBackBaseForm):
     STATUS_CHOICES = (
@@ -105,10 +90,6 @@ class BorrowOrReserveBookForm(ChangeBookInstanceStatusDueBackBaseForm):
             )
         }
 
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user", None)
-        super().__init__(*args, **kwargs)
-
     def clean(self) -> dict:
         cleaned_data = super().clean()
 
@@ -119,16 +100,6 @@ class BorrowOrReserveBookForm(ChangeBookInstanceStatusDueBackBaseForm):
 
         return cleaned_data
 
-    def save(self, commit: bool = True) -> BookInstance:
-        instance = super().save(commit=False)
-
-        due_back = self.cleaned_data.get("due_back")
-        status = self.cleaned_data.get("status")
-
-        if commit:
-            instance.borrow_book(self.user, due_back, status)
-
-        return instance
 
 
 class ChangeBookStatusForm(ChangeBookInstanceStatusDueBackBaseForm):

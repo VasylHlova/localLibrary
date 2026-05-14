@@ -7,7 +7,7 @@ from django.utils.html import strip_tags
 from django.urls import reverse
 from django.conf import settings
 
-from ..models import BookInstance 
+from catalog.models import BookInstance 
 from utils.choices import InstanceStatus
 
 @shared_task(

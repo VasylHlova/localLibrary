@@ -6,12 +6,13 @@ from catalog.tasks.periodic_tasks import (
     check_expiring_loans, 
     update_status_on_exipiring_reservation_date
 )
-from ..helper.factories import (
+from catalog.tests.helper.factories import (
     OnLoanBookInstanceFactory, 
     BookInstanceFactory,
     UserFactory
 )
 from utils.choices import InstanceStatus
+
 
 class PeriodicTasksTest(TestCase):
 

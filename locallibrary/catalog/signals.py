@@ -1,10 +1,10 @@
 from typing import Any
 
-from django.db import models, transaction
+from django.db import models
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
-from .tasks.image_tasks import cleanup_needless_images
+from catalog.tasks.image_tasks import cleanup_needless_images
 from utils.cache import increment_model_cache_version
 
 @receiver(post_delete, sender="catalog.Author")

@@ -5,8 +5,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from catalog.models import Book
-from ..helper.mixins import PermissionViewTestMixin
-from ..helper.factories import (
+from catalog.tests.helper.mixins import PermissionViewTestMixin
+from catalog.tests.helper.factories import (
     AuthorFactory, BookFactory,
     UserFactory, GenreFactory,
     BookInstanceFactory, LanguageFactory

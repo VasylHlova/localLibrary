@@ -1,14 +1,10 @@
-from datetime import date, timedelta
+from datetime import date
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
-from django.db import IntegrityError, transaction
 
-from catalog.models import Genre, Language, Loan
-from utils.choices import InstanceStatus, LoanStatus
-
-from .helper.factories import (
-    UserFactory,
+from catalog.models import Genre, Language
+from catalog.tests.helper.factories import (
     AuthorFactory,
     GenreFactory,
     LanguageFactory,
@@ -303,86 +299,6 @@ class BookInstanceModelTest(TestCase):
         instance = AvailableBookInstanceFactory()
         self.assertFalse(instance.is_overdue)
 
-    def test_borrow_book_when_status_on_loan_updates_instance_and_creates_loan(self):
-        user = UserFactory()
-        instance = AvailableBookInstanceFactory()
-        due_back = date.today() + timedelta(weeks=2)
-
-        instance.borrow_book(user=user, due_back=due_back, status=InstanceStatus.ON_LOAN)
-
-        self.assertEqual(instance.borrower, user)
-        self.assertEqual(instance.status, InstanceStatus.ON_LOAN)
-        self.assertEqual(instance.due_back, due_back)
-        self.assertTrue(
-            Loan.objects.filter(
-                book_instance=instance,
-                borrower=user,
-                status=LoanStatus.ACTIVE,
-            ).exists()
-        )
-
-    def test_borrow_book_when_status_reserved_updates_instance_and_not_creates_loan(self):
-        user = UserFactory()
-        instance = AvailableBookInstanceFactory()
-        due_back = date.today() + timedelta(weeks=2)
-
-        instance.borrow_book(user=user, due_back=due_back, status=InstanceStatus.RESERVED)
-
-        self.assertEqual(instance.status, InstanceStatus.RESERVED)
-        self.assertFalse(
-            Loan.objects.filter(book_instance=instance, status=LoanStatus.ACTIVE).exists()
-        )
-
-    def test_borrow_book_when_invalid_status_does_not_update_instance_or_create_loan(self):
-        user = UserFactory()
-        instance = AvailableBookInstanceFactory()
-
-        instance.borrow_book(
-            user=user,
-            due_back=date.today() + timedelta(weeks=2),
-            status=InstanceStatus.MAINTENANCE,
-        )
-
-        self.assertIsNone(instance.borrower)
-        self.assertEqual(instance.status, InstanceStatus.AVAILABLE)
-        self.assertIsNone(instance.due_back)
-        self.assertFalse(Loan.objects.filter(book_instance=instance).exists())
-
-    def test_return_book_when_on_loan_clears_borrower_and_sets_available(self):
-        instance = OnLoanBookInstanceFactory()
-        LoanFactory(book_instance=instance, borrower=instance.borrower)
-
-        instance.return_book()
-
-        self.assertIsNone(instance.borrower)
-        self.assertEqual(instance.status, InstanceStatus.AVAILABLE)
-        self.assertIsNone(instance.due_back)
-
-    def test_return_book_when_already_available_does_not_change_state(self):
-        instance = AvailableBookInstanceFactory()
-
-        instance.return_book()
-
-        self.assertIsNone(instance.borrower)
-        self.assertEqual(instance.status, InstanceStatus.AVAILABLE)
-        self.assertIsNone(instance.due_back)
-
-    def test_borrow_book_raises_integrity_error_when_borrower_is_none_and_status_on_loan(self):
-        instance = AvailableBookInstanceFactory()
-
-        with self.assertRaises(IntegrityError) as context:
-            with transaction.atomic():
-                instance.borrow_book(
-                    user=None,
-                    due_back=date.today() + timedelta(weeks=2),
-                    status=InstanceStatus.ON_LOAN,
-                )
-
-        self.assertIn(
-            "check_due_back_and_borrower_if_on_loan_or_reserved",
-            str(context.exception),
-        )
-
 
 class LoanModelTest(TestCase):
     def test_status_max_length_is_20(self):
@@ -394,26 +310,3 @@ class LoanModelTest(TestCase):
         loan = LoanFactory()
         expected = f"{loan.borrower.first_name} {loan.borrower.last_name}, loan status: {loan.status}"
         self.assertEqual(str(loan), expected)
-
-    def test_close_loan_when_returned_after_due_back_sets_overdue_fields(self):
-        instance = OverdueBookInstanceFactory()
-        loan = LoanFactory(book_instance=instance, borrower=instance.borrower)
-
-        loan.close_loan()
-
-        self.assertEqual(loan.returned_at, date.today())
-        self.assertEqual(loan.status, LoanStatus.RETURNED)
-        self.assertTrue(loan.is_overdue)
-        self.assertIsNotNone(loan.overdue_days)
-        self.assertGreater(loan.overdue_days, 0)
-
-    def test_close_loan_when_returned_before_due_back_sets_not_overdue(self):
-        instance = OnLoanBookInstanceFactory()
-        loan = LoanFactory(book_instance=instance, borrower=instance.borrower)
-
-        loan.close_loan()
-
-        self.assertEqual(loan.returned_at, date.today())
-        self.assertEqual(loan.status, LoanStatus.RETURNED)
-        self.assertFalse(loan.is_overdue)
-        self.assertIsNone(loan.overdue_days)

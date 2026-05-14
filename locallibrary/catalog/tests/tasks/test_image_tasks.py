@@ -1,5 +1,6 @@
 from unittest.mock import patch
 from django.test import TestCase
+
 from catalog.tasks.image_tasks import cleanup_needless_images
 
 class CleanupNeedlessImagesTaskTest(TestCase):

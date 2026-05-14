@@ -4,12 +4,12 @@ from django.utils import timezone
 from datetime import timedelta
 
 from catalog.tasks.notification_tasks import send_return_reminder_email
-from ..helper.factories import (
+from catalog.tests.helper.factories import (
     OnLoanBookInstanceFactory, 
     OverdueBookInstanceFactory, 
     AvailableBookInstanceFactory
 )
-from utils.choices import InstanceStatus
+
 
 class SendReturnReminderEmailTaskTest(TestCase):
 

@@ -1,8 +1,8 @@
 from datetime import timedelta, date
 from celery import shared_task
 
-from ..models import BookInstance
-from .notification_tasks import send_return_reminder_email 
+from catalog.models import BookInstance
+from catalog.tasks.notification_tasks import send_return_reminder_email 
 from utils.choices import InstanceStatus
 
 @shared_task(name='catalog.check_expiring_loans')

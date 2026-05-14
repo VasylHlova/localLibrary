@@ -11,8 +11,8 @@ from django.urls import reverse
 
 from catalog.models import BookInstance
 from utils.choices import InstanceStatus
-from ..helper.mixins import PermissionViewTestMixin
-from ..helper.factories import (
+from catalog.tests.helper.mixins import PermissionViewTestMixin
+from catalog.tests.helper.factories import (
     AvailableBookInstanceFactory,
     OnLoanBookInstanceFactory,
     ReservedBookInstanceFactory,
@@ -587,7 +587,7 @@ class ReturnBookInstanceViewTest(TestCase):
         )
         self.assertEqual(messages[0].level_tag, 'success')
 
-    @patch('catalog.models.BookInstance.return_book')
+    @patch('catalog.views.return_book')
     def test_post_exception_adds_error_message_and_redirects(self, mock_return_book):
         self.client.force_login(self.user_with_perms)
         mock_return_book.side_effect = Exception("Simulated database error")
