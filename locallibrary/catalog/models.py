@@ -14,6 +14,7 @@ from django.db.models import UniqueConstraint, Q, CheckConstraint
 from django.db.models.functions import Lower
 from django.urls import reverse
 
+from catalog.managers import BookInstanceManager
 
 class Genre(models.Model):
     name = models.CharField(
@@ -121,6 +122,8 @@ class BookInstance(models.Model):
         blank=True,
         related_name="borrowed_books",
     )
+
+    objects: BookInstanceManager = BookInstanceManager()
 
     class Meta:
         ordering = ["due_back"]

@@ -19,23 +19,6 @@ class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
         model = BookInstance
         fields = ["due_back"]
 
-    def __init__(self, *args, **kwargs):
-        self.desired_statuses = kwargs.pop(
-            'desired_statuses', 
-            getattr(self, 'desired_statuses', [])
-        )
-        super().__init__(*args, **kwargs)
-
-    def clean(self) -> dict:
-        cleaned_data = super().clean()
-
-        if self.instance.pk:
-            current_status = BookInstance.objects.filter(pk=self.instance.pk).values_list("status", flat=True).first()
-            if current_status and current_status not in self.desired_statuses:
-                raise ValidationError(_(f"This book has bad status({current_status}) for this action!"))
-
-        return cleaned_data
-
 
 class ChangeBookInstanceStatusDueBackBaseForm(forms.ModelForm):
     class Meta:
@@ -66,11 +49,11 @@ class ChangeBookInstanceStatusDueBackBaseForm(forms.ModelForm):
 
 
 class RenewBookForm(ChangeBookInstanceDueBackBaseForm):
-    desired_statuses = [InstanceStatus.RESERVED, InstanceStatus.ON_LOAN]
+    ...
 
 
 class BorrowReservedBookForm(ChangeBookInstanceDueBackBaseForm):
-    desired_statuses = [InstanceStatus.RESERVED]
+    ...
 
 
 class BorrowOrReserveBookForm(ChangeBookInstanceStatusDueBackBaseForm):
@@ -89,17 +72,6 @@ class BorrowOrReserveBookForm(ChangeBookInstanceStatusDueBackBaseForm):
                 }
             )
         }
-
-    def clean(self) -> dict:
-        cleaned_data = super().clean()
-
-        if self.instance.pk:
-            current_status = BookInstance.objects.values_list("status", flat=True).get(pk=self.instance.pk)
-            if current_status and current_status != InstanceStatus.AVAILABLE:
-                raise ValidationError(_("This book is not available!"))
-
-        return cleaned_data
-
 
 
 class ChangeBookStatusForm(ChangeBookInstanceStatusDueBackBaseForm):

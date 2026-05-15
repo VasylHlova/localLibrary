@@ -47,6 +47,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "catalog.apps.CatalogConfig",
     "user.apps.UserConfig",
+    "rest_framework",
+    'django_filters',
+    'drf_spectacular',
+    "rest_framework.authtoken",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
     "django.contrib.sites",
     "crispy_forms",
     "crispy_bootstrap5",
@@ -199,6 +205,12 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_LOGIN_BY_CODE_ENABLED = False
 
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'local-library-auth',
+    'JWT_AUTH_REFRESH_COOKIE': 'local-library-refresh-token',
+    'USER_DETAILS_SERIALIZER': 'dj_rest_auth.serializers.UserDetailsSerializer',
+}
 
 ACCOUNT_SIGNUP_FIELDS = ["email*", "first_name", "last_name", "password1"]
 
@@ -260,7 +272,7 @@ CACHES = {
     }
 }
 
-
+# Celery
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
 
@@ -282,3 +294,15 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=1, minute=0), 
     },
 }
+
+# DRF
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ),
+}
+

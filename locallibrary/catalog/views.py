@@ -1,12 +1,11 @@
 from typing import Any
 from uuid import uuid4
 
-from utils.choices import InstanceStatus
 from utils.cache import VersionedCacheListMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Q, QuerySet
+from django.db.models import QuerySet
 from django.forms import Form
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -26,8 +25,10 @@ from catalog.models import (
     BookInstance,
 )
 from catalog.services import (
-    borrow_book,
+    borrow_or_reserve_book,
     return_book,
+    renew_book,
+    borrow_reserved_book,
 )
 
 
@@ -36,7 +37,7 @@ def index(request: HttpRequest) -> HttpResponse:
     num_books = Book.objects.all().count()
     num_instances = BookInstance.objects.all().count()
 
-    num_instances_available = BookInstance.objects.filter(status__exact="a").count()
+    num_instances_available = BookInstance.objects.available_book_instances().count()
 
     num_authors = Author.objects.count()
     num_visits = request.session.get("num_visits", 0)
@@ -148,9 +149,8 @@ class LoanBookInstanceByUserListView(LoginRequiredMixin, VersionedCacheListMixin
 
     def get_queryset(self) -> QuerySet[BookInstance]:
         return (
-            BookInstance.objects.select_related("book__author", "borrower")
-            .filter(borrower=self.request.user)
-            .filter(Q(status=InstanceStatus.ON_LOAN) | Q(status=InstanceStatus.RESERVED))
+            BookInstance.objects.active_loans_by_user(user=self.request.user)
+            .select_related("book__author", "borrower")
             .order_by("due_back")
         )
 
@@ -163,8 +163,8 @@ class LoanBookInstanceListView(LoginRequiredMixin, PermissionRequiredMixin, Vers
 
     def get_queryset(self) -> QuerySet[BookInstance]:
         return (
-            BookInstance.objects.select_related("book__author", "borrower")
-            .filter(Q(status=InstanceStatus.ON_LOAN) | Q(status=InstanceStatus.RESERVED))
+            BookInstance.objects.active_loans()
+            .select_related("book__author", "borrower")
             .order_by("due_back")
         )
 
@@ -176,6 +176,17 @@ class RenewBookInstanceLibrarian(LoginRequiredMixin,PermissionRequiredMixin, Upd
     success_url = reverse_lazy("all-borrowed")
     permission_required = "catalog.change_bookinstance"
 
+    def form_valid(self, form: Form) -> HttpResponse:
+        try:
+            renew_book(
+                book_instance=self.object,
+                due_back=form.cleaned_data.get('due_back')
+            )
+        except ValueError as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+        return HttpResponseRedirect(self.get_success_url())
+
 
 class BorrowReservedBookInstance(LoginRequiredMixin, UpdateView):
     model = BookInstance
@@ -184,13 +195,17 @@ class BorrowReservedBookInstance(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy("my-borrowed")
 
     def form_valid(self, form: Form) -> HttpResponse:
-        borrow_book(
-            book_instance=self.object,
-            user=self.request.user,
-            due_back=form.cleaned_data.get("due_back"),
-            status=InstanceStatus.ON_LOAN
-        )
-        return super().form_valid(form)
+        try:
+            borrow_reserved_book(
+                book_instance=self.object,
+                user=self.request.user,
+                due_back=form.cleaned_data.get("due_back"),
+            )
+        except ValueError as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+        return HttpResponseRedirect(self.get_success_url())
+
 
 class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):
     model = BookInstance
@@ -209,13 +224,19 @@ class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):
         return reverse("my-borrowed")
     
     def form_valid(self, form: Form) -> HttpResponse:
-        borrow_book(
-            book_instance=self.object,
-            user=self.request.user,
-            due_back=form.cleaned_data.get("due_back"),
-            status=form.cleaned_data.get("status")
-        )
-        return super().form_valid(form)
+        try:
+            self.object.refresh_from_db()
+            borrow_or_reserve_book(
+                book_instance=self.object,
+                user=self.request.user,
+                due_back=form.cleaned_data.get("due_back"),
+                status=form.cleaned_data.get("status")
+            )
+        except ValueError as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+        return HttpResponseRedirect(self.get_success_url())
+    
     
 class ChangeBookInstanceStatus(PermissionRequiredMixin, UpdateView):
     model = BookInstance

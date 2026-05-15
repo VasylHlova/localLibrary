@@ -278,9 +278,9 @@ class RenewBookInstancesViewTest(PermissionViewTestMixin, TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertFormError(response.context["form"], "due_back", "Invalid date - renewal in past!")
 
-    def test_form_invalid_status(self):
+    def test_invalid_status(self):
         bookinstance = AvailableBookInstanceFactory()
-        valid_date = datetime.date.today() - datetime.timedelta(weeks=1)
+        valid_date = datetime.date.today() + datetime.timedelta(weeks=1)
 
         self.client.force_login(self.user_with_perms)
         response = self.client.post(
