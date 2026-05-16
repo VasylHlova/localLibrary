@@ -10,22 +10,35 @@ from catalog.models import BookInstance
 class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
     due_back = forms.DateField(
         help_text="Enter a date between now and 4 weeks (default 3).",
-        validators=[validate_future_date, validate_term_limit],
+        validators=[validate_future_date],  
     )
 
     class Meta:
         model = BookInstance
         fields = ["due_back"]
 
+    def get_status(self) -> None:
+        return None  
+
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+        due_back = cleaned_data.get("due_back")
+        if due_back:
+            try:
+                validate_term_limit(due_back, status=self.get_status())
+            except ValidationError as e:
+                self.add_error("due_back", e)
+        return cleaned_data
+
 
 class BookInstanceStatusDueBackValidationMixin:
-    def clean_due_back(self):
+    def clean_due_back(self) -> dict:
         data = self.cleaned_data.get("due_back")
         if data:
             validate_future_date(data)
         return data
 
-    def clean(self):
+    def clean(self) -> dict:
         cleaned_data = super().clean()
         status = cleaned_data.get("status")
         due_back = cleaned_data.get("due_back")
@@ -39,12 +52,13 @@ class BookInstanceStatusDueBackValidationMixin:
 
 
 class RenewBookForm(ChangeBookInstanceDueBackBaseForm):
-    ...
+    def get_status(self) -> str:
+        return self.instance.status if self.instance.pk else None
 
 
 class BorrowReservedBookForm(ChangeBookInstanceDueBackBaseForm):
-    ...
-
+    def get_status(self) -> str:
+        return InstanceStatus.ON_LOAN
 
 class BorrowOrReserveBookForm(BookInstanceStatusDueBackValidationMixin, forms.Form):
     STATUS_CHOICES = (
@@ -54,7 +68,6 @@ class BorrowOrReserveBookForm(BookInstanceStatusDueBackValidationMixin, forms.Fo
 
     status = forms.ChoiceField(choices=STATUS_CHOICES, widget=forms.RadioSelect)
     due_back = forms.DateField(
-        validators=[validate_future_date],
         widget=forms.DateInput(attrs={"placeholder": "1999-12-31"})
     )
 

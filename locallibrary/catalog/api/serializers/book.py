@@ -6,13 +6,21 @@ from catalog.api.serializers.genre import GenreSerializer
 from catalog.api.serializers.language import LanguageSerializer
 
 
-class BaseBookSerialyzer(serializers.ModelSerializer):
+class BookBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['id','title', 'author', 'image']
 
 
-class BookListSerializer(BaseBookSerialyzer):
+class BookShortSerializer(serializers.ModelSerializer):
+    detail_url = serializers.HyperlinkedIdentityField(view_name='book-detail')
+    author = serializers.StringRelatedField(many=True)
+
+    class Meta:
+        model = Book
+        fields = ['id', 'title', 'author', 'detail_url']
+
+class BookListSerializer(BookBaseSerializer):
     author = AuthorShortSerializer(read_only=True)
 
 
@@ -26,5 +34,5 @@ class BookDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'summary', 'isbn', 'author', 'genre', 'language', 'image']
 
 
-class BookWriteSerializer(BaseBookSerialyzer):
+class BookWriteSerializer(BookBaseSerializer):
     ...
