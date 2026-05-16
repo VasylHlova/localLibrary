@@ -1,4 +1,3 @@
-from typing import Any
 from uuid import uuid4
 
 from utils.cache import VersionedCacheListMixin
@@ -11,7 +10,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from catalog.forms import (
@@ -142,7 +141,7 @@ class LoanBookInstanceByUserListView(LoginRequiredMixin, VersionedCacheListMixin
     template_name = "catalog/bookinstance_list_borrowed_user.html"
     paginate_by = 10
 
-    def get_cache_prefix(self):
+    def get_cache_prefix(self) -> str:
         base_prefix = super().get_cache_prefix()
 
         return f"{base_prefix}_user_{self.request.user.id}"
@@ -207,36 +206,36 @@ class BorrowReservedBookInstance(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class BorrowOrReserveBookInstance(LoginRequiredMixin, UpdateView):
-    model = BookInstance
-    form_class = BorrowOrReserveBookForm
+class BorrowOrReserveBookInstance(LoginRequiredMixin, View):
+    template_name = "catalog/bookinstance_form.html"
 
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_object(self, queryset=None) -> BookInstance:
-        queryset = self.get_queryset()
+    def get_object(self) -> BookInstance:
+        qs = BookInstance.objects.all()
         if self.request.method == "POST":
-            queryset = queryset.select_for_update()
-        return super().get_object(queryset)
+            qs = qs.select_for_update()
+        return get_object_or_404(qs, pk=self.kwargs["pk"])
 
-    def get_success_url(self) -> str:
-        return reverse("my-borrowed")
-    
-    def form_valid(self, form: Form) -> HttpResponse:
-        try:
-            self.object.refresh_from_db()
-            borrow_or_reserve_book(
-                book_instance=self.object,
-                user=self.request.user,
-                due_back=form.cleaned_data.get("due_back"),
-                status=form.cleaned_data.get("status")
-            )
-        except ValueError as e:
-            form.add_error(None, str(e))
-            return self.form_invalid(form)
-        return HttpResponseRedirect(self.get_success_url())
-    
+    def get(self, request, *args, **kwargs) -> HttpResponse:
+        instance = self.get_object()
+        form = BorrowOrReserveBookForm()
+        return render(request, self.template_name, {"form": form, "object": instance})
+
+    def post(self, request, *args, **kwargs) -> HttpResponseRedirect:
+        instance = self.get_object()
+        form = BorrowOrReserveBookForm(request.POST)
+        if form.is_valid():
+            try:
+                borrow_or_reserve_book(
+                    book_instance=instance,
+                    user=request.user,
+                    due_back=form.cleaned_data.get("due_back"),
+                    status=form.cleaned_data.get("status")
+                )
+            except ValueError as e:
+                form.add_error(None, str(e))
+                return render(request, self.template_name, {"form": form, "object": instance})
+            return redirect("my-borrowed")
+        return render(request, self.template_name, {"form": form, "object": instance}) 
     
 class ChangeBookInstanceStatus(PermissionRequiredMixin, UpdateView):
     model = BookInstance

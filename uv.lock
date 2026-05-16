@@ -638,6 +638,7 @@ dependencies = [
     { name = "pyjwt", extra = ["crypto"] },
     { name = "python-dotenv" },
     { name = "requests" },
+    { name = "tdlib" },
 ]
 
 [package.dev-dependencies]
@@ -668,6 +669,7 @@ requires-dist = [
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.12.1" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "requests", specifier = ">=2.32.5" },
+    { name = "tdlib", specifier = ">=0.0.1" },
 ]
 
 [package.metadata.requires-dev]
@@ -1088,6 +1090,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/90/76/437d71068094df072
 wheels = [
     { url = "https://files.pythonhosted.org/packages/49/4b/359f28a903c13438ef59ebeee215fb25da53066db67b305c125f1c6d2a25/sqlparse-0.5.5-py3-none-any.whl", hash = "sha256:12a08b3bf3eec877c519589833aed092e2444e68240a3577e8e26148acc7b1ba", size = 46138, upload-time = "2025-12-19T07:17:46.573Z" },
 ]
+
+[[package]]
+name = "tdlib"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/05/5f75ab7d2ae171df313cf0785c1bf9075e4a8820cb425e2b0649423363ae/tdlib-0.0.1.tar.gz", hash = "sha256:70e8dc0a45c3bcfe8ee4875735bbae360e8e6086166a6ae0f429dada9b13057b", size = 2532, upload-time = "2018-02-01T13:49:11.367Z" }
 
 [[package]]
 name = "typing-extensions"

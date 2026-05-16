@@ -1,16 +1,14 @@
 import datetime
 
 from django.test import TestCase
+from django import forms
 
 from utils.choices import InstanceStatus
 from catalog.forms import (
-    ChangeBookInstanceStatusDueBackBaseForm,
+    BookInstanceStatusDueBackValidationMixin,
     BorrowOrReserveBookForm,
     ChangeBookStatusForm,
     ChangeBookInstanceDueBackBaseForm,
-)
-from catalog.tests.helper.factories import (
-    AvailableBookInstanceFactory,
 )
 
 
@@ -43,10 +41,14 @@ class ChangeBookInstanceDueBackBaseFormTest(TestCase):
         self.assertTrue(form.is_valid())
 
 
-class ChangeBookInstanceStatusDueBackBaseFormTest(TestCase):
+class BookInstanceStatusDueBackValidationMixinTest(TestCase):
+    class TestForm(BookInstanceStatusDueBackValidationMixin, forms.Form):
+        status = forms.CharField()
+        due_back = forms.DateField(required=False)
+
     def test_past_due_date_is_invalid(self):
         past_date = datetime.date.today() - datetime.timedelta(days=1)
-        form = ChangeBookInstanceStatusDueBackBaseForm(
+        form = self.TestForm(
             data={"status": InstanceStatus.ON_LOAN, "due_back": past_date}
         )
         self.assertFalse(form.is_valid())
@@ -55,7 +57,7 @@ class ChangeBookInstanceStatusDueBackBaseFormTest(TestCase):
 
     def test_term_limit_exceeded_for_loan_status(self):
         too_far = datetime.date.today() + datetime.timedelta(weeks=4) + datetime.timedelta(days=1)
-        form = ChangeBookInstanceStatusDueBackBaseForm(
+        form = self.TestForm(
             data={"status": InstanceStatus.ON_LOAN, "due_back": too_far}
         )
         self.assertFalse(form.is_valid())
@@ -64,7 +66,7 @@ class ChangeBookInstanceStatusDueBackBaseFormTest(TestCase):
 
     def test_term_limit_exceeded_for_reserve_status(self):
         too_far = datetime.date.today() + datetime.timedelta(weeks=2) + datetime.timedelta(days=1)
-        form = ChangeBookInstanceStatusDueBackBaseForm(
+        form = self.TestForm(
             data={"status": InstanceStatus.RESERVED, "due_back": too_far}
         )
         self.assertFalse(form.is_valid())
@@ -99,23 +101,18 @@ class BorrowOrReserveBookFormTest(TestCase):
         }
 
     def test_valid_data_is_valid(self):
-        instance = AvailableBookInstanceFactory()
-        form = BorrowOrReserveBookForm(data=self.valid_data, instance=instance)
+        form = BorrowOrReserveBookForm(data=self.valid_data)
         self.assertTrue(form.is_valid())
 
     def test_reserve_with_valid_date_is_valid(self):
-        instance = AvailableBookInstanceFactory()
         form = BorrowOrReserveBookForm(
             data={"status": InstanceStatus.RESERVED, "due_back": datetime.date.today() + datetime.timedelta(weeks=1)},
-            instance=instance
         )
         self.assertTrue(form.is_valid())
 
     def test_past_due_back_is_invalid(self):
-        instance = AvailableBookInstanceFactory()
         form = BorrowOrReserveBookForm(
             data={"status": InstanceStatus.ON_LOAN, "due_back": datetime.date.today() - datetime.timedelta(days=1)},
-            instance=instance
         )
         self.assertFalse(form.is_valid())
         self.assertIn("due_back", form.errors)

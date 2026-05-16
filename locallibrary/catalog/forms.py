@@ -1,5 +1,3 @@
-from datetime import date
-
 from utils.choices import InstanceStatus
 from utils.validators import validate_future_date, validate_term_limit
 from django import forms
@@ -20,31 +18,23 @@ class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
         fields = ["due_back"]
 
 
-class ChangeBookInstanceStatusDueBackBaseForm(forms.ModelForm):
-    class Meta:
-        model = BookInstance
-        fields = ["status", "due_back"]
-
-    def clean_due_back(self) -> date:
+class BookInstanceStatusDueBackValidationMixin:
+    def clean_due_back(self):
         data = self.cleaned_data.get("due_back")
         if data:
             validate_future_date(data)
-
         return data
 
-    def clean(self)-> dict:
+    def clean(self):
         cleaned_data = super().clean()
-
-        status_data = self.cleaned_data.get("status")
-        due_back_data = self.cleaned_data.get("due_back")
-
-        if status_data and due_back_data:
-            if status_data in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
+        status = cleaned_data.get("status")
+        due_back = cleaned_data.get("due_back")
+        if status and due_back:
+            if status in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
                 try:
-                    validate_term_limit(due_back_data, status=status_data)
+                    validate_term_limit(due_back, status=status)
                 except ValidationError as e:
                     self.add_error("due_back", e)
-
         return cleaned_data
 
 
@@ -56,25 +46,24 @@ class BorrowReservedBookForm(ChangeBookInstanceDueBackBaseForm):
     ...
 
 
-class BorrowOrReserveBookForm(ChangeBookInstanceStatusDueBackBaseForm):
+class BorrowOrReserveBookForm(BookInstanceStatusDueBackValidationMixin, forms.Form):
     STATUS_CHOICES = (
         (InstanceStatus.ON_LOAN, "Borrow"),
         (InstanceStatus.RESERVED, "Reserve"),
     )
 
-    status = forms.ChoiceField(choices=STATUS_CHOICES, label="What do you wish?", widget=forms.RadioSelect)
-
-    class Meta(ChangeBookInstanceStatusDueBackBaseForm.Meta):
-        widgets = {
-            "due_back": forms.DateInput(
-                attrs={
-                    "placeholder": "1999-12-31",
-                }
-            )
-        }
+    status = forms.ChoiceField(choices=STATUS_CHOICES, widget=forms.RadioSelect)
+    due_back = forms.DateField(
+        validators=[validate_future_date],
+        widget=forms.DateInput(attrs={"placeholder": "1999-12-31"})
+    )
 
 
-class ChangeBookStatusForm(ChangeBookInstanceStatusDueBackBaseForm):
+class ChangeBookStatusForm(BookInstanceStatusDueBackValidationMixin, forms.ModelForm):
+    class Meta:
+        model = BookInstance
+        fields = ["status", "due_back"]
+
     def clean(self) -> dict:
         cleaned_data = super().clean()
 

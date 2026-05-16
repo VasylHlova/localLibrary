@@ -257,56 +257,55 @@ class LanguageModelTest(TestCase):
 
 
 class BookInstanceModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.available_instance = AvailableBookInstanceFactory()
+        cls.on_loan_instance = OnLoanBookInstanceFactory()
+        cls.overdue_instance = OverdueBookInstanceFactory()
+
     def test_id_help_text_is_correct(self):
-        instance = AvailableBookInstanceFactory()
-        help_text = instance._meta.get_field("id").help_text
+        help_text = self.available_instance._meta.get_field("id").help_text
         self.assertEqual(help_text, "Unique ID for this particular book across whole library")
 
     def test_imprint_max_length_is_200(self):
-        instance = AvailableBookInstanceFactory()
-        max_length = instance._meta.get_field("imprint").max_length
+        max_length = self.available_instance._meta.get_field("imprint").max_length
         self.assertEqual(max_length, 200)
 
     def test_due_back_help_text_is_correct(self):
-        instance = AvailableBookInstanceFactory()
-        help_text = instance._meta.get_field("due_back").help_text
+        help_text = self.available_instance._meta.get_field("due_back").help_text
         self.assertEqual(help_text, "Date when book should become available")
 
     def test_status_max_length_is_20(self):
-        instance = AvailableBookInstanceFactory()
-        max_length = instance._meta.get_field("status").max_length
+        max_length = self.available_instance._meta.get_field("status").max_length
         self.assertEqual(max_length, 20)
 
     def test_status_help_text_is_correct(self):
-        instance = AvailableBookInstanceFactory()
-        help_text = instance._meta.get_field("status").help_text
+        help_text = self.available_instance._meta.get_field("status").help_text
         self.assertEqual(help_text, "Book availability")
 
     def test_str_returns_id_and_book_title(self):
-        instance = AvailableBookInstanceFactory()
-        expected = f"{instance.id} ({instance.book.title})"
-        self.assertEqual(str(instance), expected)
+        expected = f"{self.available_instance.id} ({self.available_instance.book.title})"
+        self.assertEqual(str(self.available_instance), expected)
 
     def test_is_overdue_returns_true_when_due_back_in_the_past(self):
-        instance = OverdueBookInstanceFactory()
-        self.assertTrue(instance.is_overdue)
+        self.assertTrue(self.overdue_instance.is_overdue)
 
     def test_is_overdue_returns_false_when_due_back_in_the_future(self):
-        instance = OnLoanBookInstanceFactory()
-        self.assertFalse(instance.is_overdue)
+        self.assertFalse(self.on_loan_instance.is_overdue)
 
     def test_is_overdue_returns_false_when_due_back_is_none(self):
-        instance = AvailableBookInstanceFactory()
-        self.assertFalse(instance.is_overdue)
+        self.assertFalse(self.available_instance.is_overdue)
 
 
 class LoanModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.loan = LoanFactory()
+
     def test_status_max_length_is_20(self):
-        loan = LoanFactory()
-        max_length = loan._meta.get_field("status").max_length
+        max_length = self.loan._meta.get_field("status").max_length
         self.assertEqual(max_length, 20)
 
     def test_str_returns_borrower_full_name_and_loan_status(self):
-        loan = LoanFactory()
-        expected = f"{loan.borrower.first_name} {loan.borrower.last_name}, loan status: {loan.status}"
-        self.assertEqual(str(loan), expected)
+        expected = f"{self.loan.borrower.first_name} {self.loan.borrower.last_name}, loan status: {self.loan.status}"
+        self.assertEqual(str(self.loan), expected)

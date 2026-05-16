@@ -81,14 +81,6 @@ class LoanedBookInstancesByUserListViewTest(TestCase):
 
     def test_reserved_books_appear_in_list(self):
         self.client.force_login(self.user_with_borrowed)
-        response = self.client.get(reverse("my-borrowed") + "?page=2")
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        statuses = {item.status for item in response.context["bookinstance_list"]}
-        self.assertIn(InstanceStatus.RESERVED, statuses)
-        self.assertNotIn(InstanceStatus.MAINTENANCE, statuses)
-
-    def test_reserved_books_appear_in_list(self):
-        self.client.force_login(self.user_with_borrowed)
         all_instances = []
         page = 1
         while True:
