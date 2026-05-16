@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
-from django.db.models import UniqueConstraint, Q, CheckConstraint
+from django.db.models import UniqueConstraint, Q, CheckConstraint, F
 from django.db.models.functions import Lower
 from django.urls import reverse
 
@@ -105,8 +105,9 @@ class BookInstance(models.Model):
         primary_key=True,
         default=uuid.uuid4,
         help_text="Unique ID for this particular book across whole library",
+        editable=False,
     )
-    book = models.ForeignKey("catalog.Book", on_delete=models.PROTECT, null=True, related_name="instances")
+    book = models.ForeignKey("catalog.Book", on_delete=models.PROTECT, related_name="instances")
     imprint = models.CharField(max_length=200)
     due_back = models.DateField(null=True, blank=True, help_text="Date when book should become available")
     status = models.CharField(
@@ -134,7 +135,8 @@ class BookInstance(models.Model):
         constraints = [
                 CheckConstraint(
                     condition=(
-                        ~Q(status__in=[InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]) | 
+                        ~Q(status__in=[InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]) 
+                        | 
                         (Q(due_back__isnull=False) & Q(borrower__isnull=False))
                     ),
                     name='check_due_back_and_borrower_if_on_loan_or_reserved',
@@ -174,6 +176,15 @@ class Author(ImageProcessingMixin, models.Model):
 
     class Meta:
         ordering = ["last_name", "first_name"]
+        constraints = [
+            CheckConstraint(
+                condition=Q(date_of_birth__isnull=True) 
+                    | Q(date_of_death__isnull=True) 
+                    | Q(date_of_birth__lte=F("date_of_death")),
+                name="check_birth_before_death",
+                violation_error_message="Author could not die earlier than was born!"
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name}"
@@ -189,7 +200,7 @@ class Author(ImageProcessingMixin, models.Model):
 
 
 class Loan(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     borrower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="loans")
     book_instance = models.ForeignKey(
         "catalog.BookInstance", on_delete=models.PROTECT, related_name="loans"

@@ -2,6 +2,7 @@ from datetime import date
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.db import IntegrityError
 
 from catalog.models import Genre, Language
 from catalog.tests.helper.factories import (
@@ -45,21 +46,12 @@ class AuthorModelTest(TestCase):
     def test_get_absolute_url_returns_correct_url(self):
         self.assertEqual(self.author.get_absolute_url(), f"/catalog/author/{self.author.pk}")
 
-    def test_full_clean_raises_error_when_death_date_earlier_than_birth_date(self):
-        author = AuthorFactory(
-            date_of_birth=date(1999, 12, 31),
-            date_of_death=date(1999, 12, 30),
-        )
-
-        with self.assertRaises(ValidationError) as context:
-            author.full_clean()
-
-        errors = context.exception.message_dict
-        self.assertIn(NON_FIELD_ERRORS, errors)
-        self.assertEqual(
-            errors[NON_FIELD_ERRORS][0],
-            "Author could not die earlier than was born!",
-        )
+    def test_check_constraint_raises_error_when_death_date_earlier_than_birth_date(self):
+        with self.assertRaises(IntegrityError):
+            AuthorFactory(
+                date_of_birth=date(1999, 12, 31),
+                date_of_death=date(1999, 12, 30),
+            )
 
     def test_full_clean_passes_when_birth_and_death_dates_are_valid(self):
         author = AuthorFactory(
@@ -215,17 +207,9 @@ class GenreModelTest(TestCase):
         help_text = self.genre._meta.get_field("name").help_text
         self.assertEqual(help_text, "Enter a book genre (e.g. Science Fiction, French Poetry etc.)")
 
-    def test_full_clean_raises_error_when_genre_name_already_exists(self):
-        with self.assertRaises(ValidationError) as context:
-            duplicate = Genre(name="test genre") 
-            duplicate.full_clean()
-
-        errors = context.exception.message_dict
-        self.assertIn(NON_FIELD_ERRORS, errors)
-        self.assertEqual(
-            errors[NON_FIELD_ERRORS][0],
-            "Genre already exists (case insensitive match)",
-        )
+    def test_check_constraint_raises_error_when_genre_name_already_exists(self):
+        with self.assertRaises(IntegrityError):
+            GenreFactory(name='Test genre')
 
     def test_str_returns_genre_name(self):
         self.assertEqual(str(self.genre), self.genre.name)
@@ -240,17 +224,9 @@ class LanguageModelTest(TestCase):
         max_length = self.language._meta.get_field("name").max_length
         self.assertEqual(max_length, 100)
 
-    def test_full_clean_raises_error_when_language_name_already_exists(self):
-        with self.assertRaises(ValidationError) as context:
-            duplicate = Language(name="test language")
-            duplicate.full_clean()
-
-        errors = context.exception.message_dict
-        self.assertIn(NON_FIELD_ERRORS, errors)
-        self.assertEqual(
-            errors[NON_FIELD_ERRORS][0],
-            "Language already exists (case insensitive match)",
-        )
+    def test_check_constraint_raises_error_when_language_name_already_exists(self):
+        with self.assertRaises(IntegrityError):
+            LanguageFactory(name='Test language')
 
     def test_str_returns_language_name(self):
         self.assertEqual(str(self.language), self.language.name)
@@ -295,6 +271,14 @@ class BookInstanceModelTest(TestCase):
 
     def test_is_overdue_returns_false_when_due_back_is_none(self):
         self.assertFalse(self.available_instance.is_overdue)
+    
+    def test_check_constraint_raises_error_when_due_back_field_empty_for_on_loan_status(self):
+        with self.assertRaises(IntegrityError):
+            OnLoanBookInstanceFactory(due_back=None)
+
+    def test_check_constraint_raises_error_when_borrower_field_empty_for_on_loan_status(self):
+        with self.assertRaises(IntegrityError):
+            OnLoanBookInstanceFactory(borrower=None)
 
 
 class LoanModelTest(TestCase):
