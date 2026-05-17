@@ -66,10 +66,12 @@ def renew_book(book_instance, due_back):
     book_instance.due_back = due_back
     book_instance.save()
 
-def borrow_reserved_book(book_instance, user, due_back):
+def borrow_reserved_book(book_instance, user, due_back) -> None:
     if book_instance.status != InstanceStatus.RESERVED:
         raise ValueError(_(f"This book has bad status({book_instance.status}) for this action!"))
     book_instance.status = InstanceStatus.ON_LOAN
     book_instance.borrower = user
     book_instance.due_back = due_back
     book_instance.save()
+    
+    Loan.objects.create(book_instance=book_instance, borrower=user, status=LoanStatus.ACTIVE)

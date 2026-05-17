@@ -202,7 +202,7 @@ class BorrowReservedBookServiceTest(TestCase):
         self.user = UserFactory()
         self.due_back = date.today() + timedelta(weeks=2)
 
-    def test_borrow_reserved_updates_status_and_borrower(self):
+    def test_borrow_reserved_updates_status_and_borrower_and_create_loan(self):
         instance = ReservedBookInstanceFactory(borrower=self.user)
 
         borrow_reserved_book(
@@ -215,7 +215,14 @@ class BorrowReservedBookServiceTest(TestCase):
         self.assertEqual(instance.status, InstanceStatus.ON_LOAN)
         self.assertEqual(instance.borrower, self.user)
         self.assertEqual(instance.due_back, self.due_back)
-
+        self.assertTrue(
+            Loan.objects.filter(
+                book_instance=instance,
+                borrower=self.user,
+                status=LoanStatus.ACTIVE,
+            ).exists()
+        )
+        
     def test_raises_value_error_when_not_reserved(self):
         instance = AvailableBookInstanceFactory()
 
