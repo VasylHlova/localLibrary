@@ -3,7 +3,7 @@ from rest_framework import serializers
 from catalog.models import Author
 
 
-class BaseAuthorSerializer(serializers.ModelSerializer):
+class AuthorBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Author
         fields = ['id', 'first_name', 'last_name', 'date_of_birth', 'date_of_death', 'image']
@@ -17,11 +17,7 @@ class AuthorShortSerializer(serializers.ModelSerializer):
         fields = ['id', 'first_name', 'last_name', 'detail_url']
 
 
-class AuthorReadSerializer(BaseAuthorSerializer):
-    ...
-
-
-class AuthorWriteSerializer(BaseAuthorSerializer):
+class AuthorWriteSerializer(AuthorBaseSerializer):
     def validate(self, attrs) -> dict:
         born = attrs.get("date_of_birth")
         died = attrs.get("date_of_death")

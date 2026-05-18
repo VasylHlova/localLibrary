@@ -130,7 +130,7 @@ class BookInstance(models.Model):
         ordering = ["due_back"]
         permissions = (
             ("can_mark_returned", "Set book as returned"),
-            ("can_change_status", "Set any book status"),
+            ("can_change_due_back", "Set due back date"),
         )
         constraints = [
                 CheckConstraint(

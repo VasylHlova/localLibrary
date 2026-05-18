@@ -14,7 +14,7 @@ class BookBaseSerializer(serializers.ModelSerializer):
 
 class BookShortSerializer(serializers.ModelSerializer):
     detail_url = serializers.HyperlinkedIdentityField(view_name='book-detail')
-    author = serializers.StringRelatedField(many=True)
+    author = serializers.StringRelatedField()
 
     class Meta:
         model = Book
@@ -34,5 +34,7 @@ class BookDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'summary', 'isbn', 'author', 'genre', 'language', 'image']
 
 
-class BookWriteSerializer(BookBaseSerializer):
-    ...
+class BookWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ['id', 'title', 'summary', 'isbn', 'author', 'genre', 'language', 'image']
