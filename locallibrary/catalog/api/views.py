@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework import status
 from django.db.models import QuerySet
 
-
+from utils.cache import DRFVersionedCacheListMixin
 from catalog.models import (
     Genre, Language,
     Author, Book,
@@ -50,19 +50,19 @@ class MultiSerializerMixin:
         return self.serializer_classes.get(self.action, super().get_serializer_class())
 
 
-class GenreViewSet(ModelViewSet):
+class GenreViewSet(DRFVersionedCacheListMixin, ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
 
 
-class LanguageViewSet(ModelViewSet):
+class LanguageViewSet(DRFVersionedCacheListMixin, ModelViewSet):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializer
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
 
 
-class AuthorViewSet(MultiSerializerMixin, ModelViewSet):
+class AuthorViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet):
     queryset = Author.objects.all()
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
     serializer_class = AuthorWriteSerializer
@@ -73,7 +73,7 @@ class AuthorViewSet(MultiSerializerMixin, ModelViewSet):
     }
 
 
-class BookViewSet(MultiSerializerMixin, ModelViewSet):
+class BookViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet):
     queryset = Book.objects.all().order_by('title')
     
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
@@ -94,7 +94,7 @@ class BookViewSet(MultiSerializerMixin, ModelViewSet):
         return queryset
     
 
-class LoanReadViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
+class LoanReadViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ReadOnlyModelViewSet):
     queryset = Loan.objects.select_related('borrower', 'book_instance')
     permission_classes = [StrictDjangoModelPermissions]
     filterset_class = LoanFilter
@@ -105,7 +105,7 @@ class LoanReadViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
     }
 
 
-class BookInstanceViewSet(MultiSerializerMixin, ModelViewSet):
+class BookInstanceViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet):
     queryset = BookInstance.objects.none()
     filterset_fields = ['status', 'borrower']
     permission_classes = [StrictDjangoModelPermissions]

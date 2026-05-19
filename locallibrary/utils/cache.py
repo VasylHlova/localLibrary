@@ -1,5 +1,8 @@
 from typing import Any
+import hashlib
+from urllib.parse import urlencode
 
+from rest_framework.response import Response
 from django.core.cache import cache
 from django.core.paginator import Page, Paginator
 
@@ -62,3 +65,25 @@ class VersionedCacheListMixin:
         cache.set(cache_key, result_tuple, self.cache_timeout)
 
         return result_tuple
+
+
+class DRFVersionedCacheListMixin:
+    cache_timeout = 60 * 60
+
+    def list(self, request, *args, **kwargs):
+        model_name = self.get_queryset().model._meta.model_name
+        version = get_model_cache_version(model_name)
+        
+        query_params = request.query_params.dict()
+        sorted_params_string = urlencode(sorted(query_params.items()))
+        params_hash = hashlib.md5(sorted_params_string.encode('utf-8')).hexdigest()
+        cache_key = f"api_{model_name}_list_v{version}_{params_hash}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, self.cache_timeout)
+        
+        return response

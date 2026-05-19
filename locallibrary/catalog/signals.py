@@ -24,9 +24,12 @@ def cleanup_old_image_on_update(sender: type[models.Model], instance: models.Mod
         cleanup_needless_images.delay(file_path=instance._original_image)
 
 
+@receiver([post_delete, post_save], sender="catalog.genre")
+@receiver([post_delete, post_save], sender="catalog.language")
 @receiver([post_delete, post_save], sender="catalog.Author")
 @receiver([post_delete, post_save], sender="catalog.Book")
 @receiver([post_delete, post_save], sender="catalog.BookInstance")
+@receiver([post_delete, post_save], sender="catalog.loan")
 def invalidate_cache(sender: type[models.Model], instance: models.Model, **kwargs: Any) -> None:
     model_name = sender._meta.model_name
 
