@@ -9,6 +9,7 @@ from utils.validators import validate_file_size
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
+from django.contrib import admin
 from django.db import models
 from django.db.models import UniqueConstraint, Q, CheckConstraint, F
 from django.db.models.functions import Lower
@@ -87,16 +88,19 @@ class Book(ImageProcessingMixin, models.Model):
         ],
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_image = self.image.name if self.image else None
+
     def __str__(self) -> str:
         return str(self.title)
 
     def get_absolute_url(self) -> str:
         return reverse("book-detail", args=[str(self.id)])
 
+    @admin.display(description="Genre")
     def display_genre(self) -> str:
         return ", ".join(genre.name for genre in self.genre.all()[:3])
-
-    display_genre.short_description = "Genre"  # type: ignore
 
 
 
@@ -171,8 +175,14 @@ class Author(ImageProcessingMixin, models.Model):
             FileExtensionValidator(
                 allowed_extensions=["jpeg", "png", "webp", "jpg", "svg"], message="Invalid file extension"
             ),
-        ],
+            
+        ]
     )
+    
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_image = self.image.name if self.image else None
 
     class Meta:
         ordering = ["last_name", "first_name"]
@@ -210,8 +220,19 @@ class Loan(models.Model):
     returned_at = models.DateField(null=True, blank=True)
 
     status = models.CharField(max_length=20, choices=LoanStatus.choices, default=LoanStatus.ACTIVE)
-    is_overdue = models.BooleanField(blank=True, null=True)
-    overdue_days = models.IntegerField(blank=True, null=True)
+
+    @property
+    def is_overdue(self) -> bool:
+        return self.overdue_days > 0
+    
+    @property
+    def overdue_days(self) -> int:
+        end_date = self.returned_at if self.returned_at else date.today()
+     
+        if not self.book_instance.due_back or end_date <= self.book_instance.due_back:
+            return 0
+            
+        return (end_date - self.book_instance.due_back).days
 
     class Meta:
         indexes = [

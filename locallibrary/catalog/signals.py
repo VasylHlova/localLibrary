@@ -20,10 +20,8 @@ def cleanup_old_image_on_update(sender: type[models.Model], instance: models.Mod
     if not instance.pk:
         return
 
-    old_instance = sender.objects.get(pk=instance.pk)
-
-    if old_instance.image and old_instance.image != instance.image:
-        cleanup_needless_images.delay(file_path=old_instance.image.name)
+    if getattr(instance, '_original_image', None) and instance._original_image != instance.image.name:
+        cleanup_needless_images.delay(file_path=instance._original_image)
 
 
 @receiver([post_delete, post_save], sender="catalog.Author")

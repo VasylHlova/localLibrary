@@ -13,7 +13,7 @@ class BookBaseSerializer(serializers.ModelSerializer):
 
 
 class BookShortSerializer(serializers.ModelSerializer):
-    detail_url = serializers.HyperlinkedIdentityField(view_name='book-detail')
+    detail_url = serializers.HyperlinkedIdentityField(view_name='api-book-detail')
     author = serializers.StringRelatedField()
 
     class Meta:

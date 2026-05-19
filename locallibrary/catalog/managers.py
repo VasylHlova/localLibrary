@@ -27,3 +27,6 @@ class BookInstanceManager(Manager):
     
     def available_book_instances(self) -> QuerySet[BookInstance]:
         return self.filter(status=InstanceStatus.AVAILABLE)
+
+    def get_locked(self, pk) -> BookInstance:
+        return self.select_for_update().get(pk=pk)

@@ -1,25 +1,34 @@
 from rest_framework import serializers
-
 from catalog.models import Loan
 from user.api.serializers import UserShortSerializer
-
 
 class LoanListSerializer(serializers.ModelSerializer):
     borrower = serializers.StringRelatedField()
     book_instance = serializers.StringRelatedField()
+    
+    is_overdue = serializers.BooleanField(read_only=True)
+    overdue_days = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Loan
-        fields = ['id', 'borrower', 'book_instance', 'issued_at', 'status', 'is_overdue', 'overdue_days']
-
+        fields = [
+            'id', 'borrower', 'book_instance', 'issued_at', 
+            'status', 'is_overdue', 'overdue_days'
+        ]
 
 class LoanDetailSerializer(serializers.ModelSerializer):
     borrower = UserShortSerializer(read_only=True)
     book_instance = serializers.HyperlinkedRelatedField(
-        view_name='bookinstance-detail',
+        view_name='api-instance-detail',
         read_only=True
     )
+    
+    is_overdue = serializers.BooleanField(read_only=True)
+    overdue_days = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Loan
-        fields = ['id', 'borrower', 'book_instance', 'issued_at', 'returned_at', 'status', 'is_overdue', 'overdue_days']
+        fields = [
+            'id', 'borrower', 'book_instance', 'issued_at', 'returned_at', 
+            'status', 'is_overdue', 'overdue_days'
+        ]

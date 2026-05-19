@@ -4,7 +4,7 @@ from utils.cache import VersionedCacheListMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import QuerySet
+from django.db.models import QuerySet, ProtectedError
 from django.forms import Form
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -92,7 +92,8 @@ class AuthorDelete(PermissionRequiredMixin, DeleteView):
         try:
             self.object.delete()
             return HttpResponseRedirect(self.success_url)
-        except Exception:
+        except ProtectedError:
+            messages.error(self.request, "Cannot delete this author because they have related books.")
             return HttpResponseRedirect(reverse("author-delete", kwargs={"pk": self.object.pk}))
 
 
@@ -132,11 +133,12 @@ class BookDelete(PermissionRequiredMixin, DeleteView):
         try:
             self.object.delete()
             return HttpResponseRedirect(self.success_url)
-        except Exception:
+        except ProtectedError:
+            messages.error(self.request, "Cannot delete this book because it has related instances.")
             return HttpResponseRedirect(reverse("book-delete", kwargs={"pk": self.object.pk}))
 
 
-class LoanBookInstanceByUserListView(LoginRequiredMixin, VersionedCacheListMixin, ListView):
+class UserBorrowedBooksListView(LoginRequiredMixin, VersionedCacheListMixin, ListView):
     model = BookInstance
     template_name = "catalog/bookinstance_list_borrowed_user.html"
     paginate_by = 10
@@ -154,7 +156,7 @@ class LoanBookInstanceByUserListView(LoginRequiredMixin, VersionedCacheListMixin
         )
 
 
-class LoanBookInstanceListView(LoginRequiredMixin, PermissionRequiredMixin, VersionedCacheListMixin, ListView):
+class AllBorrowedBooksListView(LoginRequiredMixin, PermissionRequiredMixin, VersionedCacheListMixin, ListView):
     model = BookInstance
     template_name = "catalog/bookinstance_list_borrowed.html"
     permission_required = "catalog.can_mark_returned", "catalog.view_bookinstance"
@@ -168,7 +170,7 @@ class LoanBookInstanceListView(LoginRequiredMixin, PermissionRequiredMixin, Vers
         )
 
 
-class RenewBookInstanceLibrarian(LoginRequiredMixin,PermissionRequiredMixin, UpdateView):
+class RenewBookLibrarianView(LoginRequiredMixin,PermissionRequiredMixin, UpdateView):
     model = BookInstance
     form_class = RenewBookForm
     template_name = "catalog/book_renew_librarian.html"
@@ -187,7 +189,7 @@ class RenewBookInstanceLibrarian(LoginRequiredMixin,PermissionRequiredMixin, Upd
         return HttpResponseRedirect(self.get_success_url())
 
 
-class BorrowReservedBookInstance(LoginRequiredMixin, UpdateView):
+class BorrowReservedBookView(LoginRequiredMixin, UpdateView):
     model = BookInstance
     form_class = BorrowReservedBookForm
     template_name = "catalog/book_borrow_reserved.html"
@@ -206,14 +208,11 @@ class BorrowReservedBookInstance(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class BorrowOrReserveBookInstance(LoginRequiredMixin, View):
+class BorrowOrReserveBookView(LoginRequiredMixin, View):
     template_name = "catalog/bookinstance_form.html"
 
     def get_object(self) -> BookInstance:
-        qs = BookInstance.objects.all()
-        if self.request.method == "POST":
-            qs = qs.select_for_update()
-        return get_object_or_404(qs, pk=self.kwargs["pk"])
+        return get_object_or_404(BookInstance, pk=self.kwargs["pk"])
 
     def get(self, request, *args, **kwargs) -> HttpResponse:
         instance = self.get_object()
@@ -237,7 +236,7 @@ class BorrowOrReserveBookInstance(LoginRequiredMixin, View):
             return redirect("my-borrowed")
         return render(request, self.template_name, {"form": form, "object": instance}) 
     
-class ChangeBookInstanceStatus(PermissionRequiredMixin, UpdateView):
+class ChangeBookStatusView(PermissionRequiredMixin, UpdateView):
     model = BookInstance
     form_class = ChangeBookStatusForm
     permission_required = [
@@ -250,7 +249,7 @@ class ChangeBookInstanceStatus(PermissionRequiredMixin, UpdateView):
 @login_required
 @permission_required(perm="catalog.can_mark_returned", raise_exception=True)
 @require_POST
-def return_bookinstance(request, pk: uuid4) -> None:
+def return_book_view(request, pk: uuid4) -> None:
     instance = get_object_or_404(BookInstance, pk=pk)
 
     try:

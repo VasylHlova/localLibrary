@@ -10,7 +10,7 @@ class AuthorBaseSerializer(serializers.ModelSerializer):
 
 
 class AuthorShortSerializer(serializers.ModelSerializer):
-    detail_url = serializers.HyperlinkedIdentityField(view_name='author-detail')
+    detail_url = serializers.HyperlinkedIdentityField(view_name='api-author-detail')
 
     class Meta:
         model = Author
@@ -23,7 +23,7 @@ class AuthorWriteSerializer(AuthorBaseSerializer):
         died = attrs.get("date_of_death")
 
         if died and born:
-            if died > born:
+            if died < born:
                 raise serializers.ValidationError("Author could not die earlier than was born!")
             
         return attrs

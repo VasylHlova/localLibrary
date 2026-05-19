@@ -1,6 +1,7 @@
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
+from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework.decorators import action
 from rest_framework import status
 from django.db.models import QuerySet
@@ -22,16 +23,15 @@ from catalog.api.permissions import (
     CanChangeDueBack,
     CanMarkReturned,
 )
-from locallibrary.catalog.api.filters import BookFilter
-from catalog.api.serializers.genre import GenreSerializer
-from catalog.api.serializers.language import LanguageSerializer
-from catalog.api.serializers.author import AuthorBaseSerializer, AuthorWriteSerializer
-from catalog.api.serializers.book import (
+from catalog.api.filters import BookFilter, LoanFilter
+from catalog.api.serializers import (
+    GenreSerializer,
+    LanguageSerializer,
+    AuthorBaseSerializer, 
+    AuthorWriteSerializer,
     BookListSerializer,
     BookDetailSerializer,
     BookWriteSerializer,
-)
-from catalog.api.serializers.book_instance import (
     BookInstanceListSerializer,
     BookInstanceDetailSerializer,
     BookInstanceCreateSerializer,
@@ -39,8 +39,15 @@ from catalog.api.serializers.book_instance import (
     BorrowReservedSerializer,
     RenewDueBackSerializer,
     ChangeStatusSerializer,
+    LoanDetailSerializer, 
+    LoanListSerializer
 )
-from catalog.api.serializers.loan import LoanDetailSerializer, LoanListSerializer
+
+
+class MultiSerializerMixin:
+    serializer_classes = {}
+    def get_serializer_class(self):
+        return self.serializer_classes.get(self.action, super().get_serializer_class())
 
 
 class GenreViewSet(ModelViewSet):
@@ -51,23 +58,22 @@ class GenreViewSet(ModelViewSet):
 
 class LanguageViewSet(ModelViewSet):
     queryset = Language.objects.all()
-    serializer_class =LanguageSerializer
+    serializer_class = LanguageSerializer
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
 
 
-class AuthorViewSet(ModelViewSet):
+class AuthorViewSet(MultiSerializerMixin, ModelViewSet):
     queryset = Author.objects.all()
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
     serializer_class = AuthorWriteSerializer
 
     serializer_classes = {
-            'list': AuthorBaseSerializer,
-            'retrieve': AuthorBaseSerializer,
+        'list': AuthorBaseSerializer,
+        'retrieve': AuthorBaseSerializer,
     }
-    def get_serializer_class(self):
-        return self.serializer_classes.get(self.action, self.serializer_class)
 
-class BookViewSet(ModelViewSet):
+
+class BookViewSet(MultiSerializerMixin, ModelViewSet):
     queryset = Book.objects.all().order_by('title')
     
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
@@ -77,9 +83,6 @@ class BookViewSet(ModelViewSet):
         'list': BookListSerializer,
         'retrieve': BookDetailSerializer,
     }
-
-    def get_serializer_class(self):
-        return self.serializer_classes.get(self.action, self.serializer_class)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -91,25 +94,21 @@ class BookViewSet(ModelViewSet):
         return queryset
     
 
-class LoanReadViewSet(ReadOnlyModelViewSet):
+class LoanReadViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
     queryset = Loan.objects.select_related('borrower', 'book_instance')
     permission_classes = [StrictDjangoModelPermissions]
-    filterset_fields = ['issued_at', 'is_overdue', 'overdue_days']
+    filterset_class = LoanFilter
     serializer_class = LoanListSerializer
     serializer_classes = {
         'list': LoanListSerializer,
         'retrieve': LoanDetailSerializer,
     }
 
-    def get_serializer_class(self):
-        return self.serializer_classes.get(self.action, self.serializer_class)
-    
 
-class BookInstanceViewSet(ModelViewSet):
+class BookInstanceViewSet(MultiSerializerMixin, ModelViewSet):
     queryset = BookInstance.objects.none()
-    serializer_class = BookInstanceCreateSerializer
-    filterset_fields = ['status']
-    permission_classes = [StrictDjangoModelPermissions, IsAuthenticatedOrReadOnly]
+    filterset_fields = ['status', 'borrower']
+    permission_classes = [StrictDjangoModelPermissions]
 
     serializer_classes = {
         'list': BookInstanceListSerializer,
@@ -118,9 +117,6 @@ class BookInstanceViewSet(ModelViewSet):
         'partial_update': ChangeStatusSerializer,
     }
 
-    def get_serializer_class(self):
-        return self.serializer_classes.get(self.action, self.serializer_class)
-    
     def get_queryset(self) -> QuerySet[BookInstance]:
         user = self.request.user
         
@@ -131,15 +127,15 @@ class BookInstanceViewSet(ModelViewSet):
         else:
             qs = BookInstance.objects.available_book_instances() | BookInstance.objects.active_loans_by_user(user)
         
-        return qs.select_related('book', 'borrower')
+        return qs.select_related('book', 'borrower', 'book__author')
     
 
 class BookActionViewSet(GenericViewSet):
-    queryset = BookInstance.objects.none()
+    queryset = BookInstance.objects.all()
     permission_classes = [IsAuthenticated]
 
     @action(detail=True, methods=['post'])
-    def borrow_or_reserve(self, request, pk=None):
+    def borrow_or_reserve(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()
         serializer = BorrowOrReserveSerializer(data=request.data)
         
@@ -153,12 +149,15 @@ class BookActionViewSet(GenericViewSet):
                 )
             except ValueError as e:
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"detail": "ok"}, status=status.HTTP_200_OK)
+            return Response(
+                BookInstanceDetailSerializer(instance, context={'request': request}).data, 
+                status=status.HTTP_200_OK
+            )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
-    def borrow_reserved(self, request, pk=None):
+    def borrow_reserved(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()
         serializer = BorrowReservedSerializer(data=request.data)
 
@@ -167,25 +166,31 @@ class BookActionViewSet(GenericViewSet):
                 borrow_reserved_book(
                     book_instance=instance,
                     user=request.user,
-                    due_back= serializer.validated_data.get("due_back")
+                    due_back=serializer.validated_data.get("due_back")
                 )
             except ValueError as e:
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"detail": "ok"}, status=status.HTTP_200_OK)
+            return Response(
+                BookInstanceDetailSerializer(instance, context={'request': request}).data, 
+                status=status.HTTP_200_OK
+            )
                         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[CanMarkReturned])
-    def return_book(self, request, pk=None):
+    def return_book(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()
         try:
             return_book(book_instance=instance)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "ok"}, status=status.HTTP_200_OK)
+        return Response(
+            BookInstanceDetailSerializer(instance, context={'request': request}).data, 
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=True, methods=['patch'], permission_classes=[CanChangeDueBack])
-    def extend_loan(self, request, pk=None):
+    def extend_loan(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()
         serializer = RenewDueBackSerializer(data=request.data)
         
@@ -193,10 +198,13 @@ class BookActionViewSet(GenericViewSet):
             try:
                 renew_book(
                     book_instance=instance,
-                    due_back= serializer.validated_data.get("due_back")
+                    due_back=serializer.validated_data.get("due_back")
                 )
             except ValueError as e:
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"detail": "ok"}, status=status.HTTP_200_OK)
+            return Response(
+                BookInstanceDetailSerializer(instance, context={'request': request}).data, 
+                status=status.HTTP_200_OK
+            )
                     
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

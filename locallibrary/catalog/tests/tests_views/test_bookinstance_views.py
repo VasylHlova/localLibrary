@@ -22,7 +22,7 @@ from catalog.tests.helper.factories import (
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}})
-class LoanedBookInstancesByUserListViewTest(TestCase):
+class UserBorrowedBooksListViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user_with_borrowed = UserFactory()
@@ -107,7 +107,7 @@ class LoanedBookInstancesByUserListViewTest(TestCase):
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}})
-class LoanedBookInstancesListViewTest(PermissionViewTestMixin, TestCase):
+class AllBorrowedBooksListViewTest(PermissionViewTestMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user_with_perms = UserFactory()
@@ -191,7 +191,7 @@ class LoanedBookInstancesListViewTest(PermissionViewTestMixin, TestCase):
                 last_date = book.due_back
 
 
-class RenewBookInstancesViewTest(PermissionViewTestMixin, TestCase):
+class RenewBookLibrarianViewTest(PermissionViewTestMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user_with_perms = UserFactory()
@@ -288,7 +288,7 @@ class RenewBookInstancesViewTest(PermissionViewTestMixin, TestCase):
         self.assertFormError(response.context["form"], None, "This book has bad status(a) for this action!")
 
 
-class BorrowReservedBookInstancesViewTest(TestCase):
+class BorrowReservedBookViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = UserFactory()
@@ -371,7 +371,7 @@ class BorrowReservedBookInstancesViewTest(TestCase):
         self.assertFormError(response.context["form"], None, "This book has bad status(a) for this action!")
 
 
-class BorrowOrReserveBookInstanceViewTest(TestCase):
+class BorrowOrReserveBookViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = UserFactory()
@@ -449,7 +449,7 @@ class BorrowOrReserveBookInstanceViewTest(TestCase):
         self.assertEqual(updated_instance.borrower, self.user)
 
 
-class ChangeBookInstanceStatusViewTest(PermissionViewTestMixin, TestCase):
+class ChangeBookStatusViewTest(PermissionViewTestMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user_with_perms = UserFactory()
@@ -516,7 +516,7 @@ class ChangeBookInstanceStatusViewTest(PermissionViewTestMixin, TestCase):
             "The due back field must be empty for this status!"
         )
 
-class ReturnBookInstanceViewTest(TestCase):
+class ReturnBookViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user_with_perms = UserFactory()

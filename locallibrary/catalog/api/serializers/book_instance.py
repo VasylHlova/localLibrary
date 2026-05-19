@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 from catalog.models import BookInstance
 from catalog.api.serializers.book import BookShortSerializer
-from user.api.serializers import UserShortSerizlizer
+from user.api.serializers import UserShortSerializer
 from utils.choices import InstanceStatus
 from utils.validators import validate_term_limit, validate_future_date
 
@@ -37,8 +37,8 @@ class ChangeDueBackBaseSerializer(serializers.ModelSerializer):
         model = BookInstance
         fields = ["due_back"]
 
-    def get_status(self):
-        return None  
+    def get_status(self) -> str:
+        raise NotImplementedError("Subclasses must implement get_status()")
     
     def validate(self, data) -> dict:
         due_back = data.get("due_back")
@@ -57,15 +57,7 @@ class BookInstanceReadBaseSerializer(serializers.ModelSerializer):
         model = BookInstance
         fields = ['id', 'book', 'status', 'imprint', 'due_back', 'borrower', 'is_overdue']
 
-    def to_representation(self, instance) -> dict:
-        data = super().to_representation(instance)
-        if instance.status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
-            data.pop("is_overdue", None) 
-            data.pop("borrower", None)
-            data.pop("due_back", None)
-        return data
             
-             
 class BookInstanceListSerializer(BookInstanceReadBaseSerializer):
     borrower = serializers.StringRelatedField()
     book = serializers.StringRelatedField()
@@ -73,7 +65,7 @@ class BookInstanceListSerializer(BookInstanceReadBaseSerializer):
 
 class BookInstanceDetailSerializer(BookInstanceReadBaseSerializer):
     book = BookShortSerializer(read_only=True)
-    borrower = UserShortSerizlizer(read_only=True)
+    borrower = UserShortSerializer(read_only=True)
     
     
 class BookInstanceCreateSerializer(serializers.ModelSerializer):
@@ -127,7 +119,9 @@ class ChangeStatusSerializer(
 
 class RenewDueBackSerializer(ChangeDueBackBaseSerializer):
     def get_status(self) -> str:
-        return self.instance.status if self.instance.pk else None
+        if self.instance is None:
+            raise serializers.ValidationError("Cannot renew due back date without an instance.")
+        return self.instance.status
     
 class BorrowReservedSerializer(ChangeDueBackBaseSerializer):
     def get_status(self) -> str:

@@ -17,8 +17,8 @@ class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
         model = BookInstance
         fields = ["due_back"]
 
-    def get_status(self) -> None:
-        return None  
+    def get_status(self) -> str:
+        raise NotImplementedError("Subclasses must implement get_status()")
 
     def clean(self) -> dict:
         cleaned_data = super().clean()
@@ -53,7 +53,9 @@ class BookInstanceStatusDueBackValidationMixin:
 
 class RenewBookForm(ChangeBookInstanceDueBackBaseForm):
     def get_status(self) -> str:
-        return self.instance.status if self.instance.pk else None
+        if self.instance is None:
+            raise ValidationError(_("Cannot renew due back date without an instance."))
+        return self.instance.status
 
 
 class BorrowReservedBookForm(ChangeBookInstanceDueBackBaseForm):
