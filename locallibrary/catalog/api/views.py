@@ -161,7 +161,6 @@ class BookInstanceViewSet(DRFUserVersionedCacheListMixin, MultiSerializerMixin, 
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my(self, request: Request) -> Response:
-        """Shortcut: active loans of the current authenticated user."""
         qs = (
             BookInstance.objects.active_loans_by_user(request.user)
             .select_related('book', 'borrower', 'book__author')

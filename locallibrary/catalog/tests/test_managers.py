@@ -6,6 +6,7 @@ from catalog.tests.helper.factories import (
     OnLoanBookInstanceFactory,
     ReservedBookInstanceFactory,
     BookInstanceFactory,
+    MaintenanceBookInstanceFactory,
     UserFactory,
 )
 from catalog.choices import InstanceStatus
@@ -18,7 +19,7 @@ class BookInstanceManagerTest(TestCase):
         self.available = AvailableBookInstanceFactory()
         self.on_loan = OnLoanBookInstanceFactory(borrower=self.user)
         self.reserved = ReservedBookInstanceFactory(borrower=self.user)
-        self.maintenance = BookInstanceFactory(status=InstanceStatus.MAINTENANCE)
+        self.maintenance = MaintenanceBookInstanceFactory()
 
     def test_active_loans_returns_on_loan_and_reserved(self):
         qs = BookInstance.objects.active_loans()

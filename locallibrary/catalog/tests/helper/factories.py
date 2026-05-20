@@ -42,6 +42,22 @@ class UserFactory(DjangoModelFactory):
     last_name = "Doe"
 
 
+class LibrarianUserFactory(UserFactory):
+    @factory.post_generation
+    def permissions(self, create, extracted, **kwargs):
+        if not create:
+            return
+        from django.contrib.auth.models import Permission
+        
+        perms = ["can_mark_returned", "view_bookinstance"]
+        for perm_code in perms:
+            try:
+                perm = Permission.objects.get(codename=perm_code)
+                self.user_permissions.add(perm)
+            except Permission.DoesNotExist:
+                pass
+
+
 class AuthorFactory(DjangoModelFactory):
     class Meta:
         model = Author
@@ -121,10 +137,14 @@ class OverdueBookInstanceFactory(BookInstanceFactory):
     borrower = factory.SubFactory(UserFactory)
 
 
+class MaintenanceBookInstanceFactory(BookInstanceFactory):
+    status = InstanceStatus.MAINTENANCE
+
+
 class LoanFactory(DjangoModelFactory):
     class Meta:
         model = Loan
 
-    borrower = factory.SubFactory(UserFactory)
+    borrower = factory.SelfAttribute("book_instance.borrower")
     book_instance = factory.SubFactory(OnLoanBookInstanceFactory)
     status = LoanStatus.ACTIVE

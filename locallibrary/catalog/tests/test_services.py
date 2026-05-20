@@ -20,6 +20,7 @@ from catalog.tests.helper.factories import (
     LoanFactory,
     OverdueBookInstanceFactory,
     BookInstanceFactory,
+    MaintenanceBookInstanceFactory,
 )
 
 
@@ -123,7 +124,7 @@ class BorrowOrReserveBookServiceTest(TestCase):
 class ReturnBookServiceTest(TestCase):
     def test_return_on_loan_clears_borrower_and_sets_available(self):
         instance = OnLoanBookInstanceFactory()
-        LoanFactory(book_instance=instance, borrower=instance.borrower)
+        LoanFactory(book_instance=instance)
 
         return_book(book_instance=instance)
 
@@ -133,7 +134,7 @@ class ReturnBookServiceTest(TestCase):
 
     def test_return_on_loan_closes_active_loan(self):
         instance = OnLoanBookInstanceFactory()
-        loan = LoanFactory(book_instance=instance, borrower=instance.borrower)
+        loan = LoanFactory(book_instance=instance)
 
         return_book(book_instance=instance)
 
@@ -191,7 +192,7 @@ class RenewBookServiceTest(TestCase):
             renew_book(book_instance=instance, due_back=self.new_due_back)
 
     def test_raises_value_error_when_maintenance(self):
-        instance = BookInstanceFactory(status=InstanceStatus.MAINTENANCE)
+        instance = MaintenanceBookInstanceFactory()
 
         with self.assertRaises(ValueError):
             renew_book(book_instance=instance, due_back=self.new_due_back)
@@ -247,7 +248,7 @@ class BorrowReservedBookServiceTest(TestCase):
 class CloseLoanServiceTest(TestCase):
     def test_close_loan_when_overdue_sets_overdue_fields(self):
         instance = OverdueBookInstanceFactory()
-        loan = LoanFactory(book_instance=instance, borrower=instance.borrower)
+        loan = LoanFactory(book_instance=instance)
 
         _close_loan(loan=loan, book_instance=instance)
 
@@ -259,7 +260,7 @@ class CloseLoanServiceTest(TestCase):
 
     def test_close_loan_when_not_overdue_sets_not_overdue(self):
         instance = OnLoanBookInstanceFactory()
-        loan = LoanFactory(book_instance=instance, borrower=instance.borrower)
+        loan = LoanFactory(book_instance=instance)
 
         _close_loan(loan=loan, book_instance=instance)
 

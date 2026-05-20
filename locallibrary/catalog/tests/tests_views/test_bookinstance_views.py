@@ -17,7 +17,9 @@ from catalog.tests.helper.factories import (
     OnLoanBookInstanceFactory,
     ReservedBookInstanceFactory,
     UserFactory, 
-    BookInstanceFactory
+    BookInstanceFactory,
+    MaintenanceBookInstanceFactory,
+    LibrarianUserFactory,
 )
 
 
@@ -34,21 +36,17 @@ class UserBorrowedBooksListViewTest(TestCase):
             borrower=cls.user_with_borrowed,
             due_back=date.today() + timedelta(weeks=3)
         )
-        BookInstanceFactory.create_batch(
+        ReservedBookInstanceFactory.create_batch(
             size=3,
-            borrower=cls.user_with_borrowed,
-            status=InstanceStatus.RESERVED,
-            due_back=date.today() + timedelta(weeks=1)
+            borrower=cls.user_with_borrowed
         )
-        BookInstanceFactory.create_batch(
+        MaintenanceBookInstanceFactory.create_batch(
             size=5,
-            borrower=cls.user_with_borrowed,
-            status=InstanceStatus.MAINTENANCE
+            borrower=cls.user_with_borrowed
         )
-        BookInstanceFactory.create_batch(
+        MaintenanceBookInstanceFactory.create_batch(
             size=10,
-            borrower=cls.user_no_borrowed,
-            status=InstanceStatus.MAINTENANCE
+            borrower=cls.user_no_borrowed
         )
 
     def test_redirect_if_not_logged_in(self):
@@ -110,13 +108,8 @@ class UserBorrowedBooksListViewTest(TestCase):
 class AllBorrowedBooksListViewTest(PermissionViewTestMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user_with_perms = UserFactory()
+        cls.user_with_perms = LibrarianUserFactory()
         cls.user_no_perms = UserFactory()
-        
-        can_mark_returned_perm = Permission.objects.get(codename='can_mark_returned')
-        can_view_perm = Permission.objects.get(codename='view_bookinstance')
-        cls.user_with_perms.user_permissions.add(can_mark_returned_perm)
-        cls.user_with_perms.user_permissions.add(can_view_perm)
 
         OnLoanBookInstanceFactory.create_batch(size=5, borrower=cls.user_with_perms)
         OnLoanBookInstanceFactory.create_batch(
@@ -124,22 +117,18 @@ class AllBorrowedBooksListViewTest(PermissionViewTestMixin, TestCase):
             borrower=cls.user_with_perms,
             due_back=date.today() + timedelta(weeks=3)
         )
-        BookInstanceFactory.create_batch(
+        ReservedBookInstanceFactory.create_batch(
             size=3,
-            borrower=cls.user_no_perms,
-            status=InstanceStatus.RESERVED,
-            due_back=date.today() + timedelta(weeks=1)
+            borrower=cls.user_no_perms
         )
-        BookInstanceFactory.create_batch(
+        MaintenanceBookInstanceFactory.create_batch(
             size=5,
-            borrower=cls.user_with_perms,
-            status=InstanceStatus.MAINTENANCE
+            borrower=cls.user_with_perms
         )
         OnLoanBookInstanceFactory.create_batch(size=3, borrower=cls.user_no_perms)
-        BookInstanceFactory.create_batch(
+        MaintenanceBookInstanceFactory.create_batch(
             size=7,
-            borrower=cls.user_no_perms,
-            status=InstanceStatus.MAINTENANCE
+            borrower=cls.user_no_perms
         )
 
         cls.url = reverse('all-borrowed')
@@ -194,16 +183,12 @@ class AllBorrowedBooksListViewTest(PermissionViewTestMixin, TestCase):
 class RenewBookLibrarianViewTest(PermissionViewTestMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user_with_perms = UserFactory()
+        cls.user_with_perms = LibrarianUserFactory()
         cls.user_no_perms = UserFactory()
         
         permission_change = Permission.objects.get(codename='change_bookinstance')
-        permission_mark = Permission.objects.get(codename='can_mark_returned')
-        permission_view = Permission.objects.get(codename='view_bookinstance')
         
         cls.user_with_perms.user_permissions.add(permission_change)
-        cls.user_with_perms.user_permissions.add(permission_mark)
-        cls.user_with_perms.user_permissions.add(permission_view)
 
         cls.read_only_bookinstance = OnLoanBookInstanceFactory(borrower=cls.user_with_perms)
         cls.another_borrower_read_only_bookinstance = OnLoanBookInstanceFactory(borrower=cls.user_no_perms)
@@ -452,15 +437,11 @@ class BorrowOrReserveBookViewTest(TestCase):
 class ChangeBookStatusViewTest(PermissionViewTestMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user_with_perms = UserFactory()
+        cls.user_with_perms = LibrarianUserFactory()
         cls.user_no_perms = UserFactory()
         
         can_change_perm = Permission.objects.get(codename='can_change_status')
-        can_view_perm = Permission.objects.get(codename='view_bookinstance')
-        can_mark_returned_perm = Permission.objects.get(codename='can_mark_returned')
         cls.user_with_perms.user_permissions.add(can_change_perm)
-        cls.user_with_perms.user_permissions.add(can_view_perm)
-        cls.user_with_perms.user_permissions.add(can_mark_returned_perm)
 
         cls.read_only_instance = OnLoanBookInstanceFactory()
         cls.url = reverse("bookinstance-change-status", kwargs={"pk": cls.read_only_instance.pk})
@@ -519,13 +500,8 @@ class ChangeBookStatusViewTest(PermissionViewTestMixin, TestCase):
 class ReturnBookViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user_with_perms = UserFactory()
+        cls.user_with_perms = LibrarianUserFactory()
         cls.user_no_perms = UserFactory()
-        
-        can_mark_returned_perm = Permission.objects.get(codename='can_mark_returned')
-        can_view_perm = Permission.objects.get(codename='view_bookinstance')
-        cls.user_with_perms.user_permissions.add(can_mark_returned_perm)
-        cls.user_with_perms.user_permissions.add(can_view_perm)
 
 
         cls.read_only_instance = OnLoanBookInstanceFactory()

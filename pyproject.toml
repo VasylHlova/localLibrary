@@ -36,6 +36,8 @@ dependencies = [
 dev = [
     "django-silk>=5.5.0",
     "faker>=40.11.1",
+    "pytest-django>=4.12.0",
+    "pytest-factoryboy>=2.8.1",
     "ruff>=0.15.7",
 ]
 
@@ -51,3 +53,7 @@ target-version = "py312"
 exclude = [".venv", "migrations", ".git"]
 
 lint.select = ["E", "F", "I", "UP", "DJ"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "locallibrary.settings" 
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
