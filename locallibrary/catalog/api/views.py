@@ -5,6 +5,7 @@ from rest_framework.request import Request
 from rest_framework.decorators import action
 from rest_framework import status
 from django.db.models import QuerySet
+from django.db.models import ProtectedError
 
 from utils.cache import DRFVersionedCacheListMixin, DRFUserVersionedCacheListMixin
 from catalog.models import (
@@ -18,12 +19,12 @@ from catalog.services import (
     renew_book,
     return_book
 )
-from catalog.api.permissions import (
+from utils.permissions import (
     StrictDjangoModelPermissions,
     CanChangeDueBack,
     CanMarkReturned,
 )
-from catalog.api.filters import BookFilter, LoanFilter
+from catalog.api.filters import BookFilter, LoanFilter, AuthorFilter, BookInstanceFilter
 from catalog.api.serializers import (
     GenreSerializer,
     LanguageSerializer,
@@ -54,6 +55,7 @@ class GenreViewSet(DRFVersionedCacheListMixin, ModelViewSet):
     queryset = Genre.objects.all().order_by('id')
     serializer_class = GenreSerializer
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
+    filterset_fields = ['name']
 
 
 class LanguageViewSet(DRFVersionedCacheListMixin, ModelViewSet):
@@ -66,18 +68,28 @@ class AuthorViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewS
     queryset = Author.objects.all().order_by('id')
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
     serializer_class = AuthorWriteSerializer
+    filterset_class = AuthorFilter
 
     serializer_classes = {
         'list': AuthorBaseSerializer,
         'retrieve': AuthorBaseSerializer,
     }
 
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {"detail": "Cannot delete this author because they have related books."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
 
 class BookViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet):
     queryset = Book.objects.all().order_by('title', 'id')
-    
+
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
-    serializer_class = BookWriteSerializer 
+    serializer_class = BookWriteSerializer
     filterset_class = BookFilter
     serializer_classes = {
         'list': BookListSerializer,
@@ -92,6 +104,15 @@ class BookViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet
         if self.action == 'retrieve':
             return queryset.select_related('author', 'language').prefetch_related('genre')
         return queryset
+
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {"detail": "Cannot delete this book because it has related instances."},
+                status=status.HTTP_409_CONFLICT,
+            )
     
 
 class LoanReadViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ReadOnlyModelViewSet):
@@ -107,8 +128,9 @@ class LoanReadViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ReadOnly
 
 class BookInstanceViewSet(DRFUserVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet):
     queryset = BookInstance.objects.none()
-    filterset_fields = ['status', 'borrower', 'book__title']
+    filterset_class = BookInstanceFilter
     permission_classes = [StrictDjangoModelPermissions]
+    serializer_class = BookInstanceListSerializer
 
     serializer_classes = {
         'list': BookInstanceListSerializer,
@@ -119,15 +141,33 @@ class BookInstanceViewSet(DRFUserVersionedCacheListMixin, MultiSerializerMixin, 
 
     def get_queryset(self) -> QuerySet[BookInstance]:
         user = self.request.user
-        
+
         if not user.is_authenticated:
-            qs = BookInstance.objects.available_book_instances().order_by('id')
+            qs = BookInstance.objects.available_book_instances()
         elif user.has_perm('catalog.view_bookinstance'):
-            qs = BookInstance.objects.all().order_by('id')
+            qs = BookInstance.objects.all()
         else:
-            qs = BookInstance.objects.available_book_instances() | BookInstance.objects.active_loans_by_user(user).order_by('-due_back', 'id')
-        
-        return qs.select_related('book', 'borrower', 'book__author').order_by('id')
+            qs = (
+                BookInstance.objects.available_book_instances()
+                | BookInstance.objects.active_loans_by_user(user)
+            )
+
+        return qs.select_related('book', 'borrower', 'book__author').order_by('due_back', 'id')
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my(self, request: Request) -> Response:
+        """Shortcut: active loans of the current authenticated user."""
+        qs = (
+            BookInstance.objects.active_loans_by_user(request.user)
+            .select_related('book', 'borrower', 'book__author')
+            .order_by('due_back')
+        )
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = BookInstanceListSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        serializer = BookInstanceListSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
     
 
 class BookActionViewSet(GenericViewSet):

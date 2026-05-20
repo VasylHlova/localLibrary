@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.db import IntegrityError, transaction
 
 from catalog.models import Loan
-from utils.choices import InstanceStatus, LoanStatus
+from catalog.choices import InstanceStatus, LoanStatus
 from catalog.services import (
     borrow_or_reserve_book,
     borrow_reserved_book,

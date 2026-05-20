@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from catalog.models import Author, Book, BookInstance
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 from catalog.tests.helper.factories import (
     AuthorFactory, BookFactory,
     AvailableBookInstanceFactory,

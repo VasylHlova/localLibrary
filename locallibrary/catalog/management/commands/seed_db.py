@@ -6,7 +6,7 @@ from faker import Faker
 
 from catalog.models import Book, Author, Genre, Language, BookInstance
 from user.models import CustomUser
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 
 class Command(BaseCommand):
     help = 'Fill DB with fake data for dev-env'

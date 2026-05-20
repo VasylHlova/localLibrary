@@ -1,9 +1,8 @@
 import uuid
 from datetime import date
 
-from utils.choices import InstanceStatus, LoanStatus
-from utils.image_proccess import ImageProcessingMixin
-from utils.image_proccess import GeneratePath
+from catalog.choices import InstanceStatus, LoanStatus
+from utils.image_processing import ImageProcessingMixin, GeneratePath
 from utils.validators import validate_file_size
 
 from django.conf import settings

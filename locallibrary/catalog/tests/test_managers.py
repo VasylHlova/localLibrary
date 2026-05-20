@@ -8,7 +8,7 @@ from catalog.tests.helper.factories import (
     BookInstanceFactory,
     UserFactory,
 )
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 
 
 class BookInstanceManagerTest(TestCase):

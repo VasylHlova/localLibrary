@@ -5,7 +5,7 @@ from django.db.models import (
     Manager
 )
 
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 from user.models import CustomUser
 
 if TYPE_CHECKING:

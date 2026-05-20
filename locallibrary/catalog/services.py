@@ -3,7 +3,7 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 from user.models import CustomUser
-from utils.choices import InstanceStatus, LoanStatus
+from catalog.choices import InstanceStatus, LoanStatus
 from catalog.models import Loan, BookInstance
 
 @transaction.atomic

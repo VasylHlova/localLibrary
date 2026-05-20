@@ -1,4 +1,4 @@
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 from utils.validators import validate_future_date, validate_term_limit
 from django import forms
 from django.core.exceptions import ValidationError

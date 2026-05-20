@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.conf import settings
 
 from catalog.models import BookInstance 
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 
 @shared_task(
         name='catalog.send_return_reminder_email', 

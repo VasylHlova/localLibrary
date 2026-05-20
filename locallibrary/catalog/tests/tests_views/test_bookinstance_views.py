@@ -10,7 +10,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from catalog.models import BookInstance
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 from catalog.tests.helper.mixins import PermissionViewTestMixin
 from catalog.tests.helper.factories import (
     AvailableBookInstanceFactory,

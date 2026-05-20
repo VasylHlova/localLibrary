@@ -3,7 +3,7 @@ from celery import shared_task
 
 from catalog.models import BookInstance
 from catalog.tasks.notification_tasks import send_return_reminder_email 
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 
 @shared_task(name='catalog.check_expiring_loans')
 def check_expiring_loans():

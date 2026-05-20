@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from django import forms
 
-from utils.choices import InstanceStatus
+from catalog.choices import InstanceStatus
 from catalog.forms import (
     BookInstanceStatusDueBackValidationMixin,
     BorrowOrReserveBookForm,
