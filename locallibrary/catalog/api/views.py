@@ -19,12 +19,17 @@ from catalog.services import (
     renew_book,
     return_book
 )
-from utils.permissions import (
-    StrictDjangoModelPermissions,
+from utils.permissions import StrictDjangoModelPermissions
+from catalog.api.permissions import (
     CanChangeDueBack,
-    CanMarkReturned,
+    CanMarkReturned
 )
-from catalog.api.filters import BookFilter, LoanFilter, AuthorFilter, BookInstanceFilter
+from catalog.api.filters import (
+    BookFilter, 
+    LoanFilter, 
+    AuthorFilter, 
+    BookInstanceFilter
+)
 from catalog.api.serializers import (
     GenreSerializer,
     LanguageSerializer,

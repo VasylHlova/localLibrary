@@ -1,6 +1,5 @@
-from utils.choices import UserRole
-from utils.image_proccess import ImageProcessingMixin
-from utils.image_proccess import GeneratePath
+from user.choices import UserRole
+from utils.image_processing import ImageProcessingMixin, GeneratePath
 from utils.validators import validate_file_size
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator

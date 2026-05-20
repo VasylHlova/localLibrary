@@ -2,13 +2,13 @@ import hashlib
 import os
 from typing import Any
 from io import BytesIO
-from PIL import Image, ImageOps
 
+from PIL import Image, ImageOps
 
 from django.core.files.base import ContentFile, File
 from django.db import models
 from django.utils.deconstruct import deconstructible
-from PIL import Image, ImageOps
+
 
 class ImageProcessingMixin:
     def save(self, *args: Any, **kwargs: Any) -> None:
@@ -20,6 +20,7 @@ class ImageProcessingMixin:
                 self.photo.save(self.photo.name, processed, save=False)
 
         super().save(*args, **kwargs)
+
 
 @deconstructible
 class GeneratePath:

@@ -28,6 +28,9 @@ urlpatterns = (
         path("catalog/", include("catalog.urls")),
         path("user/", include("user.urls")),
         path("api/users/", include("user.api.urls")),
+        path("api/catalog/", include("catalog.api.urls")),
+        path("api/auth/", include("dj_rest_auth.urls")),
+        path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
         path("accounts/", include("allauth.urls")),
     ]
     + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

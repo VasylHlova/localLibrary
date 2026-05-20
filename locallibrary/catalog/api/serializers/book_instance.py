@@ -7,7 +7,7 @@ from catalog.models import BookInstance
 from catalog.api.serializers.book import BookShortSerializer
 from user.api.serializers import UserShortSerializer
 from catalog.choices import InstanceStatus
-from utils.validators import validate_term_limit, validate_future_date
+from catalog.validators import validate_term_limit, validate_future_date
 
 
 class BookInstanceStatusDueBackValidationMixin:

@@ -3,7 +3,7 @@ from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 
 from .helper.factories import UserFactory, ProfileFactory, ImageFactory
-from utils.choices import UserRole
+from user.choices import UserRole
 
 class CustomUserModelTest(TestCase):
     @classmethod

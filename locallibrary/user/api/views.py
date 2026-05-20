@@ -1,8 +1,7 @@
-from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from user.models import CustomUser, UserProfile
 from user.api.serializers import (
@@ -11,7 +10,7 @@ from user.api.serializers import (
     UserWriteSerializer,
     UserProfileWriteSerializer,
 )
-from catalog.api.permissions import StrictDjangoModelPermissions
+from utils.permissions import StrictDjangoModelPermissions
 
 
 class UserViewSet(ReadOnlyModelViewSet):
@@ -83,18 +82,3 @@ class UserViewSet(ReadOnlyModelViewSet):
         serializer.save()
         return Response(UserDetailSerializer(request.user, context={"request": request}).data)
 
-
-class UserRegistrationViewSet(GenericViewSet):
-    queryset = CustomUser.objects.none()
-    serializer_class = UserWriteSerializer
-    permission_classes = []
-
-    @action(detail=False, methods=["post"], url_path="register")
-    def register(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response(
-            UserDetailSerializer(user, context={"request": request}).data,
-            status=status.HTTP_201_CREATED,
-        )
