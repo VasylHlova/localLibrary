@@ -4,25 +4,30 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.decorators import action
 from rest_framework import status
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.db.models import ProtectedError
 
-from utils.cache import DRFVersionedCacheListMixin, DRFUserVersionedCacheListMixin
+from common.mixins import MultiSerializerMixin
+from common.cache import DRFVersionedCacheListMixin, DRFUserVersionedCacheListMixin
 from catalog.models import (
     Genre, Language,
     Author, Book,
     BookInstance, Loan
 )
+from catalog.choices import InstanceStatus
 from catalog.services import (
     borrow_or_reserve_book,
     borrow_reserved_book,
     renew_book,
     return_book
 )
-from utils.permissions import StrictDjangoModelPermissions
+from common.permissions import StrictDjangoModelPermissions
+from common.mixins import MultiPermissionMixin
 from catalog.api.permissions import (
     CanChangeDueBack,
-    CanMarkReturned
+    CanChangeStatus,
+    CanMarkReturned,
+    CanChangeStatus
 )
 from catalog.api.filters import (
     BookFilter, 
@@ -50,10 +55,19 @@ from catalog.api.serializers import (
 )
 
 
-class MultiSerializerMixin:
-    serializer_classes = {}
-    def get_serializer_class(self):
-        return self.serializer_classes.get(self.action, super().get_serializer_class())
+def get_book_instance_queryset(user: 'Request.user') -> 'QuerySet[BookInstance]':
+    if not user.is_authenticated:
+        return BookInstance.objects.available_book_instances()
+    if user.has_perm('catalog.view_bookinstance'):
+        return BookInstance.objects.all()
+    return BookInstance.objects.filter(
+        Q(status=InstanceStatus.AVAILABLE)
+        | 
+        Q(
+            status__in=[InstanceStatus.ON_LOAN, InstanceStatus.RESERVED],
+            borrower=user,
+        )
+    )
 
 
 class GenreViewSet(DRFVersionedCacheListMixin, ModelViewSet):
@@ -131,7 +145,7 @@ class LoanReadViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ReadOnly
     }
 
 
-class BookInstanceViewSet(DRFUserVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet):
+class BookInstanceViewSet(DRFUserVersionedCacheListMixin, MultiPermissionMixin, MultiSerializerMixin, ModelViewSet):
     queryset = BookInstance.objects.none()
     filterset_class = BookInstanceFilter
     permission_classes = [StrictDjangoModelPermissions]
@@ -144,22 +158,19 @@ class BookInstanceViewSet(DRFUserVersionedCacheListMixin, MultiSerializerMixin, 
         'partial_update': ChangeStatusSerializer,
     }
 
+    permission_classes_by_action = {
+        'partial_update': [CanChangeStatus],
+        'my': [IsAuthenticated],
+    }
+
     def get_queryset(self) -> QuerySet[BookInstance]:
-        user = self.request.user
+        return (
+            get_book_instance_queryset(self.request.user)
+            .select_related('book', 'borrower', 'book__author')
+            .order_by('due_back', 'id')
+        )
 
-        if not user.is_authenticated:
-            qs = BookInstance.objects.available_book_instances()
-        elif user.has_perm('catalog.view_bookinstance'):
-            qs = BookInstance.objects.all()
-        else:
-            qs = (
-                BookInstance.objects.available_book_instances()
-                | BookInstance.objects.active_loans_by_user(user)
-            )
-
-        return qs.select_related('book', 'borrower', 'book__author').order_by('due_back', 'id')
-
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'])
     def my(self, request: Request) -> Response:
         qs = (
             BookInstance.objects.active_loans_by_user(request.user)
@@ -175,8 +186,11 @@ class BookInstanceViewSet(DRFUserVersionedCacheListMixin, MultiSerializerMixin, 
     
 
 class BookActionViewSet(GenericViewSet):
-    queryset = BookInstance.objects.all()
+    queryset = BookInstance.objects.none() 
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self) -> QuerySet[BookInstance]:
+        return get_book_instance_queryset(self.request.user)
 
     @action(detail=True, methods=['post'])
     def borrow_or_reserve(self, request: Request, pk: str | None = None) -> Response:

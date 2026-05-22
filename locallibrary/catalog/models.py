@@ -2,8 +2,8 @@ import uuid
 from datetime import date
 
 from catalog.choices import InstanceStatus, LoanStatus
-from utils.image_processing import ImageProcessingMixin, GeneratePath
-from utils.validators import validate_file_size
+from common.image import ImageProcessingMixin, GeneratePath
+from common.validators import validate_file_size
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -53,7 +53,9 @@ class Language(models.Model):
 
 
 class Book(ImageProcessingMixin, models.Model):
+    IMAGE_FIELD = 'image'
     IMAGE_SIZE = (600, 350)
+
     title = models.CharField(max_length=200)
     author = models.ForeignKey("catalog.Author", on_delete=models.PROTECT, null=True, related_name="books")
     summary = models.TextField(max_length=1000, help_text="Enter a brief description of the book")
@@ -134,6 +136,7 @@ class BookInstance(models.Model):
         permissions = (
             ("can_mark_returned", "Set book as returned"),
             ("can_change_due_back", "Set due back date"),
+            ("can_change_status", "Can change book status"),
         )
         constraints = [
                 CheckConstraint(
@@ -158,6 +161,7 @@ class BookInstance(models.Model):
 
 
 class Author(ImageProcessingMixin, models.Model):
+    IMAGE_FIELD = 'image'
     IMAGE_SIZE = (500, 400)
 
     first_name = models.CharField(max_length=100)
@@ -219,6 +223,12 @@ class Loan(models.Model):
     returned_at = models.DateField(null=True, blank=True)
 
     status = models.CharField(max_length=20, choices=LoanStatus.choices, default=LoanStatus.ACTIVE)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['book_instance', 'returned_at']), 
+            models.Index(fields=['borrower', 'returned_at'])
+        ] 
 
     @property
     def is_overdue(self) -> bool:

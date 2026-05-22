@@ -17,7 +17,7 @@ def borrow_or_reserve_book(
     locked_instance = BookInstance.objects.get_locked(pk=book_instance.pk)
     
     if status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
-        raise ValueError(f"Bad status: {status}")
+        raise ValueError(_("This book has bad status (%(status)s) for this action!") % {"status": locked_instance.status})
     
     if locked_instance.status != InstanceStatus.AVAILABLE:
             raise ValueError("Book is not available")
@@ -55,18 +55,25 @@ def _close_loan(loan: Loan, book_instance: BookInstance) -> None:
     loan.returned_at = date.today()
     loan.save()
 
+@transaction.atomic
 def renew_book(book_instance, due_back):
-    if book_instance.status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
-        raise ValueError(_(f"This book has bad status({book_instance.status}) for this action!"))
-    book_instance.due_back = due_back
-    book_instance.save()
+    locked_instance = BookInstance.objects.get_locked(pk=book_instance.pk)
+
+    if locked_instance.status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
+        raise ValueError(_("This book has bad status (%(status)s) for this action!") % {"status": locked_instance.status})
+    locked_instance.due_back = due_back
+    locked_instance.save()
 
 @transaction.atomic
 def borrow_reserved_book(book_instance, user, due_back) -> None:
     locked_instance = BookInstance.objects.get_locked(pk=book_instance.pk)
 
     if locked_instance.status != InstanceStatus.RESERVED:
-        raise ValueError(_(f"This book has bad status({locked_instance.status}) for this action!"))
+        raise ValueError(_("This book has bad status (%(status)s) for this action!") % {"status": locked_instance.status})
+    
+    if locked_instance.borrower != user:
+        raise ValueError("You are not the one who reserved this book.")
+    
     locked_instance.status = InstanceStatus.ON_LOAN
     locked_instance.borrower = user
     locked_instance.due_back = due_back

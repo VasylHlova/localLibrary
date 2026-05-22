@@ -1,6 +1,6 @@
 import hashlib
+import logging
 import os
-from typing import Any
 from io import BytesIO
 
 from PIL import Image, ImageOps
@@ -9,16 +9,20 @@ from django.core.files.base import ContentFile, File
 from django.db import models
 from django.utils.deconstruct import deconstructible
 
+logger = logging.getLogger(__name__)
+
 
 class ImageProcessingMixin:
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        if hasattr(self, "photo") and self.photo:
-            size: tuple[int, int] = getattr(self, "IMAGE_SIZE", (800, 800))
+    IMAGE_FIELD = "image"
 
-            processed = processing_image(self.photo, max_size=size)
+    def save(self, *args, **kwargs):
+        field_name = getattr(self, "IMAGE_FIELD", "image")
+        image_field = getattr(self, field_name, None)
+        if image_field:
+            size = getattr(self, "IMAGE_SIZE", (800, 800))
+            processed = processing_image(image_field, max_size=size)
             if processed:
-                self.photo.save(self.photo.name, processed, save=False)
-
+                image_field.save(image_field.name, processed, save=False)
         super().save(*args, **kwargs)
 
 
@@ -56,4 +60,8 @@ def processing_image(image: File, max_size: tuple[int, int] = (800, 800)) -> Fil
         return ContentFile(output.read())
 
     except Exception:
+        logger.exception(
+            "Image processing failed for '%s'. File will be saved unprocessed.",
+            getattr(image, 'name', repr(image)),
+        )
         return None

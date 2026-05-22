@@ -1,12 +1,11 @@
 from typing import Any
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from .models import CustomUser, UserProfile
-from .tasks.profile_picture_tasks import cleanup_needless_profile_picture
+from user.models import CustomUser, UserProfile
+from common.tasks import cleanup_storage_file
 
 User = get_user_model()
 
@@ -19,9 +18,9 @@ def cleanup_profile_picture_on_delete(sender: type[CustomUser], instance: Custom
     old_instance = sender.objects.get(pk=instance.pk)
 
     if old_instance.is_active and not instance.is_active:
-        if instance.profile.profile_picture:
-            cleanup_needless_profile_picture.delay(file_path=instance.profile.profile_picture.name)
-
+        profile = getattr(instance, 'profile', None)
+        if profile and profile.profile_picture:
+            cleanup_storage_file.delay(file_path=profile.profile_picture.name)
 
 @receiver(pre_save, sender=UserProfile)
 def cleanup_old_profile_photo_on_update(
@@ -33,8 +32,7 @@ def cleanup_old_profile_photo_on_update(
     old_instance = sender.objects.get(pk=instance.pk)
 
     if old_instance.profile_picture and old_instance.profile_picture != instance.profile_picture:
-            cleanup_needless_profile_picture.delay(file_path=old_instance.profile_picture.name)
-
+        cleanup_storage_file.delay(file_path=old_instance.profile_picture.name)
 
 @receiver(post_save, sender=User)
 def create_user_profile(

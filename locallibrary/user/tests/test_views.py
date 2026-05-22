@@ -3,7 +3,7 @@ from http import HTTPStatus
 from django.test import TestCase
 from django.urls import reverse
 
-from .helper.factories import UserFactory, ProfileFactory
+from user.tests.helper.factories import UserFactory, ProfileFactory
 
 
 class UserDetailViewTest(TestCase):

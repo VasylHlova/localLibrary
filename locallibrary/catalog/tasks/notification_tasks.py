@@ -67,3 +67,5 @@ def send_return_reminder_email(self, book_instance_id: str):
         recipient_list=[receiver_email],
         fail_silently=False,            
     )
+
+    return f"Reminder sent to {receiver_email} for '{book_title}'."

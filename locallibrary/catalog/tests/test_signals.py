@@ -8,7 +8,7 @@ from catalog.tests.helper.factories import AuthorFactory, BookFactory, BookInsta
 
 class CleanupImageOnDeleteSignalTest(TestCase):
     
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_deletes_author_image_on_delete(self, mock_delay):
         author = AuthorFactory()
 
@@ -19,7 +19,7 @@ class CleanupImageOnDeleteSignalTest(TestCase):
 
         mock_delay.assert_called_once_with(file_path="authors/dummy.jpg")
 
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_deletes_book_image_on_delete(self, mock_delay):
         book = BookFactory()
 
@@ -30,14 +30,14 @@ class CleanupImageOnDeleteSignalTest(TestCase):
 
         mock_delay.assert_called_once_with(file_path="books/dummy.jpg")
 
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_does_not_fail_when_author_has_no_image(self, mock_delay):
         author = AuthorFactory(image=None)
         author.delete()
         
         mock_delay.assert_not_called()
 
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_does_not_fail_when_book_has_no_image(self, mock_delay):
         book = BookFactory(image=None)
         book.delete()
@@ -47,7 +47,7 @@ class CleanupImageOnDeleteSignalTest(TestCase):
 
 class CleanupOldImageOnUpdateSignalTest(TestCase):
     
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_deletes_old_author_image_when_replaced(self, mock_delay):
         author = AuthorFactory()
         
@@ -59,7 +59,7 @@ class CleanupOldImageOnUpdateSignalTest(TestCase):
 
         mock_delay.assert_called_once_with(file_path="authors/old_dummy.jpg")
 
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_deletes_old_book_image_when_replaced(self, mock_delay):
         book = BookFactory()
 
@@ -71,7 +71,7 @@ class CleanupOldImageOnUpdateSignalTest(TestCase):
 
         mock_delay.assert_called_once_with(file_path="books/old_dummy.jpg")
 
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_does_not_delete_author_image_when_other_field_updated(self, mock_delay):
         author = AuthorFactory()
         
@@ -85,7 +85,7 @@ class CleanupOldImageOnUpdateSignalTest(TestCase):
 
         mock_delay.assert_not_called()
 
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_does_not_delete_book_image_when_other_field_updated(self, mock_delay):
         book = BookFactory()
         
@@ -99,14 +99,14 @@ class CleanupOldImageOnUpdateSignalTest(TestCase):
 
         mock_delay.assert_not_called()
 
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_skips_cleanup_for_new_author_instance(self, mock_delay):
         author = AuthorFactory.build()
         author.save()
         
         mock_delay.assert_not_called()
 
-    @patch('catalog.signals.cleanup_needless_images.delay')
+    @patch('catalog.signals.cleanup_storage_file.delay')
     def test_skips_cleanup_for_new_book_instance(self, mock_delay):
         author = AuthorFactory()
         language = LanguageFactory()

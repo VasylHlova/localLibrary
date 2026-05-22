@@ -5,13 +5,12 @@ from django.test import TestCase
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 
-from .helper.factories import UserFactory, ProfileFactory
+from user.tests.helper.factories import UserFactory, ProfileFactory
 from user.models import UserProfile
 
 
 class CleanupProfilePictureOnDeleteSignalTest(TestCase):
-    
-    @patch('user.signals.cleanup_needless_profile_picture.delay')
+    @patch('user.signals.cleanup_storage_file.delay')
     def test_deletes_profile_picture_when_user_deactivated(self, mock_delay):
         user = UserFactory(is_active=True)
         
@@ -23,7 +22,7 @@ class CleanupProfilePictureOnDeleteSignalTest(TestCase):
 
         mock_delay.assert_called_once_with(file_path="profiles/dummy.jpg")
 
-    @patch('user.signals.cleanup_needless_profile_picture.delay')
+    @patch('user.signals.cleanup_storage_file.delay')
     def test_does_not_delete_photo_when_other_field_updated(self, mock_delay):
         user = UserFactory(is_active=True)
         
@@ -35,7 +34,7 @@ class CleanupProfilePictureOnDeleteSignalTest(TestCase):
 
         mock_delay.assert_not_called()
 
-    @patch('user.signals.cleanup_needless_profile_picture.delay')
+    @patch('user.signals.cleanup_storage_file.delay')
     def test_does_not_fail_when_deactivated_user_has_no_photo(self, mock_delay):
         user = UserFactory(is_active=True)
         user.profile.profile_picture = None
@@ -46,7 +45,7 @@ class CleanupProfilePictureOnDeleteSignalTest(TestCase):
         
         mock_delay.assert_not_called()
 
-    @patch('user.signals.cleanup_needless_profile_picture.delay')
+    @patch('user.signals.cleanup_storage_file.delay')
     def test_skips_cleanup_for_new_user_instance(self, mock_delay):
         user = UserFactory.build(is_active=False)
         user.save()
@@ -55,8 +54,7 @@ class CleanupProfilePictureOnDeleteSignalTest(TestCase):
 
 
 class CleanupOldProfilePhotoOnUpdateSignalTest(TestCase):
-    
-    @patch('user.signals.cleanup_needless_profile_picture.delay')
+    @patch('user.signals.cleanup_storage_file.delay')
     def test_deletes_old_profile_photo_when_replaced(self, mock_delay):
         user = UserFactory()
         profile = user.profile
@@ -69,7 +67,7 @@ class CleanupOldProfilePhotoOnUpdateSignalTest(TestCase):
 
         mock_delay.assert_called_once_with(file_path="profiles/old_dummy.jpg")
 
-    @patch('user.signals.cleanup_needless_profile_picture.delay')
+    @patch('user.signals.cleanup_storage_file.delay')
     def test_does_not_delete_photo_when_other_profile_field_updated(self, mock_delay):
         user = UserFactory()
         profile = user.profile
@@ -84,7 +82,7 @@ class CleanupOldProfilePhotoOnUpdateSignalTest(TestCase):
 
         mock_delay.assert_not_called()
 
-    @patch('user.signals.cleanup_needless_profile_picture.delay')
+    @patch('user.signals.cleanup_storage_file.delay')
     def test_skips_cleanup_for_new_profile_instance(self, mock_delay):
         with mute_signals(post_save):
             user = UserFactory()

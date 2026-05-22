@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from django.test import TestCase
 
 from user.forms import CustomSignupForm, UpdateUserProfileForm
-from .helper.factories import UserFactory, ProfileFactory
+from user.tests.helper.factories import UserFactory, ProfileFactory
 
 
 class CustomSignupFormTest(TestCase):

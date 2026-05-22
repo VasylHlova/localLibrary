@@ -10,10 +10,11 @@ from user.api.serializers import (
     UserWriteSerializer,
     UserProfileWriteSerializer,
 )
-from utils.permissions import StrictDjangoModelPermissions
+from common.permissions import StrictDjangoModelPermissions
+from common.mixins import MultiSerializerMixin
 
 
-class UserViewSet(ReadOnlyModelViewSet):
+class UserViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
     queryset = CustomUser.objects.select_related("profile").all()
     permission_classes = [StrictDjangoModelPermissions]
     serializer_class = UserListSerializer
@@ -22,9 +23,6 @@ class UserViewSet(ReadOnlyModelViewSet):
         "list": UserListSerializer,
         "retrieve": UserDetailSerializer,
     }
-
-    def get_serializer_class(self):
-        return self.serializer_classes.get(self.action, self.serializer_class)
 
     def get_queryset(self):
         qs = super().get_queryset()

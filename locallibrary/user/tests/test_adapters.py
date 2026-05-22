@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.http import HttpRequest
 
 from user.adapters import MySocialAccountAdapter
-from .helper.factories import UserFactory
+from user.tests.helper.factories import UserFactory
 
 
 

@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from utils.cache import VersionedCacheListMixin
+from common.cache import VersionedCacheListMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -79,7 +79,7 @@ class AuthorCreate(PermissionRequiredMixin, CreateView):
 
 class AuthorUpdate(PermissionRequiredMixin, UpdateView):
     model = Author
-    fields = "__all__"
+    fields = ["first_name", "last_name", "date_of_birth", "date_of_death", "image"]
     permission_required = "catalog.change_author"
 
 
@@ -120,7 +120,7 @@ class BookCreate(PermissionRequiredMixin, CreateView):
 
 class BookUpdate(PermissionRequiredMixin, UpdateView):
     model = Book
-    fields = "__all__"
+    fields = ["title", "author", "summary", "isbn", "genre", "image", 'language']
     permission_required = "catalog.change_book"
 
 

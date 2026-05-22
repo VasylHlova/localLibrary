@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from user.models import CustomUser, UserProfile
+from user.validators import validate_user_age
 
 
 class UserShortSerializer(serializers.ModelSerializer):
@@ -53,6 +54,11 @@ class UserWriteSerializer(serializers.ModelSerializer):
 
 
 class UserProfileWriteSerializer(serializers.ModelSerializer):
+    date_of_birth = serializers.DateField(
+        required=False, allow_null=True,
+        validators=[validate_user_age]
+    )
+
     class Meta:
         model = UserProfile
         fields = ['date_of_birth', 'profile_picture']

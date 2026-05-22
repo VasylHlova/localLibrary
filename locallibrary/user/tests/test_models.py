@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 
-from .helper.factories import UserFactory, ProfileFactory, ImageFactory
+from user.tests.helper.factories import UserFactory, ProfileFactory, ImageFactory
 from user.choices import UserRole
 
 class CustomUserModelTest(TestCase):

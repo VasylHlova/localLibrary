@@ -14,4 +14,6 @@ def validate_future_date(value: datetime.date) -> None:
 def validate_term_limit(value: datetime.date, status: str = InstanceStatus.ON_LOAN) -> None:
     weeks = 4 if status == InstanceStatus.ON_LOAN else 2
     if value > datetime.date.today() + datetime.timedelta(weeks=weeks):
-        raise ValidationError(_(f"Invalid date - renewal more than {weeks} weeks ahead!"))
+        raise ValidationError(
+            _("Invalid date - renewal more than %(weeks)s weeks ahead!") % {"weeks": weeks}
+        )

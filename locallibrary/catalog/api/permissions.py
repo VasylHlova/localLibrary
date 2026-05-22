@@ -9,3 +9,7 @@ class CanMarkReturned(BasePermission):
 class CanChangeDueBack(BasePermission):
     def has_permission(self, request, view):
         return request.user.has_perm('catalog.can_change_due_back')
+    
+class CanChangeStatus(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.has_perm('catalog.can_change_status')
