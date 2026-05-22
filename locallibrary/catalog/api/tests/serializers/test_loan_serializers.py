@@ -1,9 +1,11 @@
 import pytest
 from rest_framework.test import APIRequestFactory
-from catalog.api.serializers.loan import LoanListSerializer, LoanDetailSerializer
-from catalog.tests.helper.factories import LoanFactory, UserFactory, BookInstanceFactory
+
+from catalog.api.serializers.loan import LoanDetailSerializer, LoanListSerializer
+from catalog.tests.helper.factories import BookInstanceFactory, LoanFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
+
 
 def test_loan_list_serialization():
     borrower = UserFactory()
@@ -15,11 +17,12 @@ def test_loan_list_serialization():
     assert "is_overdue" in serializer.data
     assert "overdue_days" in serializer.data
 
+
 def test_loan_detail_serialization():
     borrower = UserFactory()
     book_instance = BookInstanceFactory(imprint="First Edition")
     loan = LoanFactory(borrower=borrower, book_instance=book_instance)
-    
+
     factory = APIRequestFactory()
     request = factory.get("/api/catalog/loans/")
     serializer = LoanDetailSerializer(instance=loan, context={"request": request})

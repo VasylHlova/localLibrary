@@ -1,11 +1,11 @@
-from user.choices import UserRole
-from common.image import ImageProcessingMixin, GeneratePath
+from common.image import GeneratePath, ImageProcessingMixin
 from common.validators import validate_file_size
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.urls import reverse
 
+from user.choices import UserRole
 from user.managers import CustomUserManager
 
 
@@ -36,7 +36,7 @@ class CustomUser(AbstractUser):
 
 
 class UserProfile(ImageProcessingMixin, models.Model):
-    IMAGE_FIELD = 'profile_picture'
+    IMAGE_FIELD = "profile_picture"
     IMAGE_SIZE = (300, 300)
 
     user = models.OneToOneField("user.CustomUser", on_delete=models.CASCADE, related_name="profile")

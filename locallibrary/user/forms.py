@@ -1,8 +1,9 @@
 from datetime import date
 
-from user.validators import validate_user_age
 from django import forms
 from django.http import HttpRequest
+
+from user.validators import validate_user_age
 
 from .models import CustomUser, UserProfile
 

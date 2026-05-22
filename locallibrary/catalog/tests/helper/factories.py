@@ -3,12 +3,12 @@ import uuid
 from datetime import date, timedelta
 
 import factory
-from factory.django import DjangoModelFactory
 from django.core.files.uploadedfile import SimpleUploadedFile
+from factory.django import DjangoModelFactory
 from PIL import Image
 
-from catalog.models import Author, Genre, Language, Book, BookInstance, Loan
 from catalog.choices import InstanceStatus, LoanStatus
+from catalog.models import Author, Book, BookInstance, Genre, Language, Loan
 
 
 class ImageFactory:
@@ -23,7 +23,7 @@ class ImageFactory:
     def create_oversized(name="large.jpg", content_type="image/jpeg"):
         file = io.BytesIO()
         Image.new("RGB", (100, 100), color="red").save(file, format="JPEG")
-        
+
         file.write(b"\0" * (21 * 1024 * 1024))
         file.seek(0)
         return SimpleUploadedFile(name, file.read(), content_type=content_type)
@@ -48,7 +48,7 @@ class LibrarianUserFactory(UserFactory):
         if not create:
             return
         from django.contrib.auth.models import Permission
-        
+
         perms = ["can_mark_returned", "view_bookinstance"]
         for perm_code in perms:
             try:

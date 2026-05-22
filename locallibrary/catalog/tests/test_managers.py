@@ -3,17 +3,14 @@ from django.test import TestCase
 from catalog.models import BookInstance
 from catalog.tests.helper.factories import (
     AvailableBookInstanceFactory,
+    MaintenanceBookInstanceFactory,
     OnLoanBookInstanceFactory,
     ReservedBookInstanceFactory,
-    BookInstanceFactory,
-    MaintenanceBookInstanceFactory,
     UserFactory,
 )
-from catalog.choices import InstanceStatus
 
 
 class BookInstanceManagerTest(TestCase):
-
     def setUp(self):
         self.user = UserFactory()
         self.available = AvailableBookInstanceFactory()
@@ -32,7 +29,7 @@ class BookInstanceManagerTest(TestCase):
         self.assertNotIn(self.maintenance, qs)
 
     def test_active_loans_by_user_returns_only_user_loans(self):
-        other_instance = OnLoanBookInstanceFactory()  
+        other_instance = OnLoanBookInstanceFactory()
         qs = BookInstance.objects.active_loans_by_user(self.user)
         self.assertIn(self.on_loan, qs)
         self.assertNotIn(other_instance, qs)

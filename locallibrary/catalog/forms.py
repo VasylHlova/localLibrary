@@ -1,16 +1,16 @@
-from catalog.choices import InstanceStatus
-from catalog.validators import validate_future_date, validate_term_limit
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
+from catalog.choices import InstanceStatus
 from catalog.models import BookInstance
+from catalog.validators import validate_future_date, validate_term_limit
 
 
 class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
     due_back = forms.DateField(
         help_text="Enter a date between now and 4 weeks (default 3).",
-        validators=[validate_future_date],  
+        validators=[validate_future_date],
     )
 
     class Meta:
@@ -62,6 +62,7 @@ class BorrowReservedBookForm(ChangeBookInstanceDueBackBaseForm):
     def get_status(self) -> str:
         return InstanceStatus.ON_LOAN
 
+
 class BorrowOrReserveBookForm(BookInstanceStatusDueBackValidationMixin, forms.Form):
     STATUS_CHOICES = (
         (InstanceStatus.ON_LOAN, "Borrow"),
@@ -69,9 +70,7 @@ class BorrowOrReserveBookForm(BookInstanceStatusDueBackValidationMixin, forms.Fo
     )
 
     status = forms.ChoiceField(choices=STATUS_CHOICES, widget=forms.RadioSelect)
-    due_back = forms.DateField(
-        widget=forms.DateInput(attrs={"placeholder": "1999-12-31"})
-    )
+    due_back = forms.DateField(widget=forms.DateInput(attrs={"placeholder": "1999-12-31"}))
 
 
 class ChangeBookStatusForm(BookInstanceStatusDueBackValidationMixin, forms.ModelForm):

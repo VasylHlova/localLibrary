@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from django.test import TestCase
 
 from user.forms import CustomSignupForm, UpdateUserProfileForm
-from user.tests.helper.factories import UserFactory, ProfileFactory
+from user.tests.helper.factories import ProfileFactory, UserFactory
 
 
 class CustomSignupFormTest(TestCase):
@@ -14,12 +14,12 @@ class CustomSignupFormTest(TestCase):
     def test_signup_method_updates_user_fields(self):
         form_data = {"first_name": "TestFirst", "last_name": "TestLast"}
         form = CustomSignupForm(data=form_data)
-        
+
         self.assertTrue(form.is_valid())
-        
+
         form.signup(request=None, user=self.user)
         self.user.refresh_from_db()
-        
+
         self.assertEqual(self.user.first_name, "TestFirst")
         self.assertEqual(self.user.last_name, "TestLast")
 
@@ -31,7 +31,7 @@ class UpdateUserProfileFormTest(TestCase):
 
     def test_form_initializes_with_user_data(self):
         form = UpdateUserProfileForm(instance=self.profile)
-        
+
         self.assertEqual(form.fields["first_name"].initial, "OldFirst")
         self.assertEqual(form.fields["last_name"].initial, "OldLast")
 
@@ -43,12 +43,12 @@ class UpdateUserProfileFormTest(TestCase):
             "date_of_birth": valid_date,
         }
         form = UpdateUserProfileForm(data=form_data, instance=self.profile)
-        
+
         self.assertTrue(form.is_valid())
-        
+
         saved_profile = form.save()
         self.profile.user.refresh_from_db()
-        
+
         self.assertEqual(self.profile.user.first_name, "UpdatedFirst")
         self.assertEqual(self.profile.user.last_name, "UpdatedLast")
         self.assertEqual(saved_profile.date_of_birth, valid_date)
@@ -57,6 +57,6 @@ class UpdateUserProfileFormTest(TestCase):
         future_date = date.today() + timedelta(days=10)
         form_data = {"date_of_birth": future_date}
         form = UpdateUserProfileForm(data=form_data, instance=self.profile)
-        
+
         self.assertFalse(form.is_valid())
         self.assertIn("date_of_birth", form.errors)

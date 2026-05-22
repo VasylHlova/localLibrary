@@ -1,23 +1,23 @@
-import pytest
 from datetime import date, timedelta
 from unittest.mock import patch
+
+import pytest
 from django.urls import reverse
 from rest_framework import status
 
 from catalog.choices import InstanceStatus
 from catalog.tests.helper.factories import (
-    UserFactory,
     AvailableBookInstanceFactory,
+    LoanFactory,
     OnLoanBookInstanceFactory,
     ReservedBookInstanceFactory,
-    LoanFactory,
+    UserFactory,
 )
 
 pytestmark = pytest.mark.django_db
 
 
 class TestBookActionBorrowOrReserveIntegration:
-
     def test_anonymous_forbidden(self, api_client):
         instance = AvailableBookInstanceFactory()
         response = api_client.post(
@@ -59,8 +59,8 @@ class TestBookActionBorrowOrReserveIntegration:
         instance.refresh_from_db()
         assert instance.status == InstanceStatus.RESERVED
 
-class TestBookActionBorrowOrReserveUnit:
 
+class TestBookActionBorrowOrReserveUnit:
     def test_invalid_serializer_returns_400(self, api_client):
         user = UserFactory()
         api_client.force_authenticate(user=user)
@@ -90,7 +90,6 @@ class TestBookActionBorrowOrReserveUnit:
 
 
 class TestBookActionBorrowReservedIntegration:
-
     def test_anonymous_forbidden(self, api_client):
         instance = ReservedBookInstanceFactory()
         response = api_client.post(
@@ -112,8 +111,8 @@ class TestBookActionBorrowReservedIntegration:
         instance.refresh_from_db()
         assert instance.status == InstanceStatus.ON_LOAN
 
-class TestBookActionBorrowReservedUnit:
 
+class TestBookActionBorrowReservedUnit:
     def test_invalid_serializer_returns_400(self, api_client):
         user = UserFactory()
         api_client.force_authenticate(user=user)
@@ -140,7 +139,6 @@ class TestBookActionBorrowReservedUnit:
 
 
 class TestBookActionReturnBookIntegration:
-
     def test_anonymous_forbidden(self, api_client):
         instance = OnLoanBookInstanceFactory()
         response = api_client.post(
@@ -168,8 +166,8 @@ class TestBookActionReturnBookIntegration:
         instance.refresh_from_db()
         assert instance.status == InstanceStatus.AVAILABLE
 
-class TestBookActionReturnBookUnit:
 
+class TestBookActionReturnBookUnit:
     @patch("catalog.api.views.return_book")
     def test_service_raises_value_error_returns_400(self, mock_service, api_client, staff_user):
         mock_service.side_effect = ValueError("Bad status")
@@ -183,7 +181,6 @@ class TestBookActionReturnBookUnit:
 
 
 class TestBookActionExtendLoanIntegration:
-
     def test_anonymous_forbidden(self, api_client):
         instance = OnLoanBookInstanceFactory()
         response = api_client.patch(
@@ -214,8 +211,8 @@ class TestBookActionExtendLoanIntegration:
         instance.refresh_from_db()
         assert instance.due_back == new_due
 
-class TestBookActionExtendLoanUnit:
 
+class TestBookActionExtendLoanUnit:
     def test_invalid_serializer_returns_400(self, api_client, staff_user):
         api_client.force_authenticate(user=staff_user)
         instance = OnLoanBookInstanceFactory()

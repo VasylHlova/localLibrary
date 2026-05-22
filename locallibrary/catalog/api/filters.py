@@ -1,66 +1,67 @@
 import django_filters
-from django.db.models import Value, Q, F
+from django.db.models import F, Q, Value
 from django.db.models.functions import Concat, Now
-from catalog.models import Book, Loan, Author, BookInstance
+
+from catalog.models import Author, Book, BookInstance, Loan
 
 
 class BookFilter(django_filters.FilterSet):
-    author_name = django_filters.CharFilter(method='filter_by_author_full_name')
+    author_name = django_filters.CharFilter(method="filter_by_author_full_name")
 
     class Meta:
         model = Book
-        fields = ['title']
+        fields = ["title"]
 
     def filter_by_author_full_name(self, queryset, name, value):
         if not value:
             return queryset
 
         return queryset.annotate(
-            full_name=Concat('author__first_name', Value(' '), 'author__last_name')
+            full_name=Concat("author__first_name", Value(" "), "author__last_name")
         ).filter(full_name__icontains=value)
-    
+
 
 class LoanFilter(django_filters.FilterSet):
-    is_overdue = django_filters.BooleanFilter(method='filter_is_overdue')
+    is_overdue = django_filters.BooleanFilter(method="filter_is_overdue")
 
     class Meta:
         model = Loan
-        fields = ['issued_at']
+        fields = ["issued_at"]
 
     def filter_is_overdue(self, queryset, name, value):
         if value:
             return queryset.filter(
-                Q(returned_at__isnull=True, book_instance__due_back__lt=Now()) |
-                Q(returned_at__isnull=False, returned_at__gt=F('book_instance__due_back'))
+                Q(returned_at__isnull=True, book_instance__due_back__lt=Now())
+                | Q(returned_at__isnull=False, returned_at__gt=F("book_instance__due_back"))
             )
 
         else:
             return queryset.exclude(
-                Q(returned_at__isnull=True, book_instance__due_back__lt=Now()) |
-                Q(returned_at__isnull=False, returned_at__gt=F('book_instance__due_back'))
+                Q(returned_at__isnull=True, book_instance__due_back__lt=Now())
+                | Q(returned_at__isnull=False, returned_at__gt=F("book_instance__due_back"))
             )
 
 
 class AuthorFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(method='filter_by_full_name', label='Full name')
-    first_name = django_filters.CharFilter(lookup_expr='icontains')
-    last_name = django_filters.CharFilter(lookup_expr='icontains')
+    name = django_filters.CharFilter(method="filter_by_full_name", label="Full name")
+    first_name = django_filters.CharFilter(lookup_expr="icontains")
+    last_name = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = Author
-        fields = ['first_name', 'last_name']
+        fields = ["first_name", "last_name"]
 
     def filter_by_full_name(self, queryset, name, value):
         if not value:
             return queryset
-        return queryset.annotate(
-            full_name=Concat('first_name', Value(' '), 'last_name')
-        ).filter(full_name__icontains=value)
+        return queryset.annotate(full_name=Concat("first_name", Value(" "), "last_name")).filter(
+            full_name__icontains=value
+        )
 
 
 class BookInstanceFilter(django_filters.FilterSet):
-    book_title = django_filters.CharFilter(field_name='book__title', lookup_expr='icontains')
+    book_title = django_filters.CharFilter(field_name="book__title", lookup_expr="icontains")
 
     class Meta:
         model = BookInstance
-        fields = ['status', 'borrower']
+        fields = ["status", "borrower"]

@@ -1,24 +1,25 @@
 from rest_framework import serializers
 
-from catalog.models import Book
 from catalog.api.serializers.author import AuthorShortSerializer
 from catalog.api.serializers.genre import GenreSerializer
 from catalog.api.serializers.language import LanguageSerializer
+from catalog.models import Book
 
 
 class BookBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ['id','title', 'author', 'image']
+        fields = ["id", "title", "author", "image"]
 
 
 class BookShortSerializer(serializers.ModelSerializer):
-    detail_url = serializers.HyperlinkedIdentityField(view_name='api-book-detail')
+    detail_url = serializers.HyperlinkedIdentityField(view_name="api-book-detail")
     author = serializers.StringRelatedField()
 
     class Meta:
         model = Book
-        fields = ['id', 'title', 'author', 'detail_url']
+        fields = ["id", "title", "author", "detail_url"]
+
 
 class BookListSerializer(BookBaseSerializer):
     author = AuthorShortSerializer(read_only=True)
@@ -31,10 +32,10 @@ class BookDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['id', 'title', 'summary', 'isbn', 'author', 'genre', 'language', 'image']
+        fields = ["id", "title", "summary", "isbn", "author", "genre", "language", "image"]
 
 
 class BookWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ['id', 'title', 'summary', 'isbn', 'author', 'genre', 'language', 'image']
+        fields = ["id", "title", "summary", "isbn", "author", "genre", "language", "image"]

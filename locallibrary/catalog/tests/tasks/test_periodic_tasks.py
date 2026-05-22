@@ -1,25 +1,18 @@
 from datetime import date, timedelta
 from unittest.mock import patch
+
 from django.test import TestCase
 
-from catalog.tasks.periodic_tasks import (
-    check_expiring_loans, 
-    update_status_on_expiring_reservation_date
-)
-from catalog.tests.helper.factories import (
-    OnLoanBookInstanceFactory, 
-    BookInstanceFactory,
-    UserFactory
-)
 from catalog.choices import InstanceStatus
+from catalog.tasks.periodic_tasks import check_expiring_loans, update_status_on_expiring_reservation_date
+from catalog.tests.helper.factories import BookInstanceFactory, OnLoanBookInstanceFactory, UserFactory
 
 
 class PeriodicTasksTest(TestCase):
-
-    @patch('catalog.tasks.periodic_tasks.send_return_reminder_email.delay')
+    @patch("catalog.tasks.periodic_tasks.send_return_reminder_email.delay")
     def test_check_expiring_loans_triggers_correct_dates(self, mock_delay):
         today = date.today()
-        
+
         OnLoanBookInstanceFactory(due_back=today + timedelta(days=1))
         OnLoanBookInstanceFactory(due_back=today + timedelta(days=3))
         OnLoanBookInstanceFactory(due_back=today + timedelta(days=5))
@@ -34,14 +27,10 @@ class PeriodicTasksTest(TestCase):
         user = UserFactory()
 
         expired = BookInstanceFactory(
-            status=InstanceStatus.RESERVED,
-            due_back=today - timedelta(days=1),
-            borrower=user 
+            status=InstanceStatus.RESERVED, due_back=today - timedelta(days=1), borrower=user
         )
         active = BookInstanceFactory(
-            status=InstanceStatus.RESERVED,
-            due_back=today + timedelta(days=1),
-            borrower=user 
+            status=InstanceStatus.RESERVED, due_back=today + timedelta(days=1), borrower=user
         )
 
         update_status_on_expiring_reservation_date()

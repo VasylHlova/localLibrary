@@ -1,20 +1,19 @@
 from datetime import date
 
-from django.test import TestCase
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.test import TestCase
 
-from catalog.models import Genre, Language
 from catalog.tests.helper.factories import (
     AuthorFactory,
-    GenreFactory,
-    LanguageFactory,
-    BookFactory,
     AvailableBookInstanceFactory,
+    BookFactory,
+    GenreFactory,
+    ImageFactory,
+    LanguageFactory,
+    LoanFactory,
     OnLoanBookInstanceFactory,
     OverdueBookInstanceFactory,
-    LoanFactory,
-    ImageFactory,
 )
 
 
@@ -90,7 +89,7 @@ class AuthorModelTest(TestCase):
 
         self.assertIn("image", context.exception.message_dict)
         self.assertIn("Exceeded max file size(20MB)", context.exception.message_dict["image"])
-        
+
     def test_full_clean_passes_when_image_is_none(self):
         author = AuthorFactory.build(image=None)
         author.full_clean()
@@ -118,9 +117,7 @@ class BookModelTest(TestCase):
         help_text = self.book._meta.get_field("isbn").help_text
         self.assertEqual(
             help_text,
-            '13 Character <a href="https://www.isbn-international.org/content/what-isbn">'
-            "ISBN number"
-            "</a>",
+            '13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>',
         )
 
     def test_genre_help_text_is_correct(self):
@@ -144,7 +141,7 @@ class BookModelTest(TestCase):
     def test_full_clean_passes_when_image_has_valid_extension(self):
         author = AuthorFactory()
         language = LanguageFactory()
-        
+
         for ext, fmt, content_type in [
             ("jpg", "JPEG", "image/jpeg"),
             ("jpeg", "JPEG", "image/jpeg"),
@@ -155,7 +152,7 @@ class BookModelTest(TestCase):
                 book = BookFactory.build(
                     author=author,
                     language=language,
-                    image=ImageFactory.create(name=f"test.{ext}", format=fmt, content_type=content_type)
+                    image=ImageFactory.create(name=f"test.{ext}", format=fmt, content_type=content_type),
                 )
                 book.full_clean()
 
@@ -163,7 +160,7 @@ class BookModelTest(TestCase):
         book = BookFactory.build(
             author=AuthorFactory(),
             language=LanguageFactory(),
-            image=ImageFactory.create_invalid_extension()
+            image=ImageFactory.create_invalid_extension(),
         )
 
         with self.assertRaises(ValidationError) as context:
@@ -174,9 +171,7 @@ class BookModelTest(TestCase):
 
     def test_full_clean_raises_error_when_image_exceeds_max_size(self):
         book = BookFactory.build(
-            author=AuthorFactory(),
-            language=LanguageFactory(),
-            image=ImageFactory.create_oversized()
+            author=AuthorFactory(), language=LanguageFactory(), image=ImageFactory.create_oversized()
         )
 
         with self.assertRaises(ValidationError) as context:
@@ -186,11 +181,7 @@ class BookModelTest(TestCase):
         self.assertIn("Exceeded max file size(20MB)", context.exception.message_dict["image"])
 
     def test_full_clean_passes_when_image_is_none(self):
-        book = BookFactory.build(
-            author=AuthorFactory(),
-            language=LanguageFactory(),
-            image=None
-        )
+        book = BookFactory.build(author=AuthorFactory(), language=LanguageFactory(), image=None)
         book.full_clean()
 
 
@@ -209,7 +200,7 @@ class GenreModelTest(TestCase):
 
     def test_check_constraint_raises_error_when_genre_name_already_exists(self):
         with self.assertRaises(IntegrityError):
-            GenreFactory(name='Test genre')
+            GenreFactory(name="Test genre")
 
     def test_str_returns_genre_name(self):
         self.assertEqual(str(self.genre), self.genre.name)
@@ -226,7 +217,7 @@ class LanguageModelTest(TestCase):
 
     def test_check_constraint_raises_error_when_language_name_already_exists(self):
         with self.assertRaises(IntegrityError):
-            LanguageFactory(name='Test language')
+            LanguageFactory(name="Test language")
 
     def test_str_returns_language_name(self):
         self.assertEqual(str(self.language), self.language.name)
@@ -271,7 +262,7 @@ class BookInstanceModelTest(TestCase):
 
     def test_is_overdue_returns_false_when_due_back_is_none(self):
         self.assertFalse(self.available_instance.is_overdue)
-    
+
     def test_check_constraint_raises_error_when_due_back_field_empty_for_on_loan_status(self):
         with self.assertRaises(IntegrityError):
             OnLoanBookInstanceFactory(due_back=None)
@@ -291,5 +282,9 @@ class LoanModelTest(TestCase):
         self.assertEqual(max_length, 20)
 
     def test_str_returns_borrower_full_name_and_loan_status(self):
-        expected = f"{self.loan.borrower.first_name} {self.loan.borrower.last_name}, loan status: {self.loan.status}"
+        expected = (
+            f"{self.loan.borrower.first_name}" 
+            f"{self.loan.borrower.last_name}, "
+            f"loan status: {self.loan.status}"
+        )
         self.assertEqual(str(self.loan), expected)

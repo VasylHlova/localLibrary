@@ -1,11 +1,11 @@
 from typing import Any
 
+from common.cache import increment_model_cache_version
+from common.tasks import cleanup_storage_file
 from django.db import models
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
-from common.tasks import cleanup_storage_file
-from common.cache import increment_model_cache_version
 
 @receiver(post_delete, sender="catalog.Author")
 @receiver(post_delete, sender="catalog.Book")
@@ -20,7 +20,7 @@ def cleanup_old_image_on_update(sender: type[models.Model], instance: models.Mod
     if not instance.pk:
         return
 
-    if getattr(instance, '_original_image', None) and instance._original_image != instance.image.name:
+    if getattr(instance, "_original_image", None) and instance._original_image != instance.image.name:
         cleanup_storage_file.delay(file_path=instance._original_image)
 
 

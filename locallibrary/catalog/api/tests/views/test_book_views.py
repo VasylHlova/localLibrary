@@ -5,16 +5,15 @@ from rest_framework import status
 from catalog.tests.helper.factories import (
     AuthorFactory,
     BookFactory,
+    BookInstanceFactory,
     GenreFactory,
     LanguageFactory,
-    BookInstanceFactory,
 )
 
 pytestmark = pytest.mark.django_db
 
 
 class TestBookViewSet:
-
     def test_list_anonymous(self, api_client):
         BookFactory.create_batch(3)
         response = api_client.get(reverse("api-book-list"))

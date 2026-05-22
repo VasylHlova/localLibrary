@@ -1,7 +1,7 @@
 import datetime
 import uuid
-from http import HTTPStatus
 from datetime import date, timedelta
+from http import HTTPStatus
 from unittest.mock import patch
 
 from django.contrib.auth.models import Permission
@@ -9,18 +9,17 @@ from django.contrib.messages import get_messages
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from catalog.models import BookInstance
 from catalog.choices import InstanceStatus
-from catalog.tests.helper.mixins import PermissionViewTestMixin
+from catalog.models import BookInstance
 from catalog.tests.helper.factories import (
     AvailableBookInstanceFactory,
+    LibrarianUserFactory,
+    MaintenanceBookInstanceFactory,
     OnLoanBookInstanceFactory,
     ReservedBookInstanceFactory,
-    UserFactory, 
-    BookInstanceFactory,
-    MaintenanceBookInstanceFactory,
-    LibrarianUserFactory,
+    UserFactory,
 )
+from catalog.tests.helper.mixins import PermissionViewTestMixin
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}})
@@ -28,26 +27,15 @@ class UserBorrowedBooksListViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user_with_borrowed = UserFactory()
-        cls.user_no_borrowed = UserFactory(first_name='Jane')
+        cls.user_no_borrowed = UserFactory(first_name="Jane")
 
         OnLoanBookInstanceFactory.create_batch(size=5, borrower=cls.user_with_borrowed)
         OnLoanBookInstanceFactory.create_batch(
-            size=5,
-            borrower=cls.user_with_borrowed,
-            due_back=date.today() + timedelta(weeks=3)
+            size=5, borrower=cls.user_with_borrowed, due_back=date.today() + timedelta(weeks=3)
         )
-        ReservedBookInstanceFactory.create_batch(
-            size=3,
-            borrower=cls.user_with_borrowed
-        )
-        MaintenanceBookInstanceFactory.create_batch(
-            size=5,
-            borrower=cls.user_with_borrowed
-        )
-        MaintenanceBookInstanceFactory.create_batch(
-            size=10,
-            borrower=cls.user_no_borrowed
-        )
+        ReservedBookInstanceFactory.create_batch(size=3, borrower=cls.user_with_borrowed)
+        MaintenanceBookInstanceFactory.create_batch(size=5, borrower=cls.user_with_borrowed)
+        MaintenanceBookInstanceFactory.create_batch(size=10, borrower=cls.user_no_borrowed)
 
     def test_redirect_if_not_logged_in(self):
         response = self.client.get(reverse("my-borrowed"))
@@ -113,25 +101,14 @@ class AllBorrowedBooksListViewTest(PermissionViewTestMixin, TestCase):
 
         OnLoanBookInstanceFactory.create_batch(size=5, borrower=cls.user_with_perms)
         OnLoanBookInstanceFactory.create_batch(
-            size=5,
-            borrower=cls.user_with_perms,
-            due_back=date.today() + timedelta(weeks=3)
+            size=5, borrower=cls.user_with_perms, due_back=date.today() + timedelta(weeks=3)
         )
-        ReservedBookInstanceFactory.create_batch(
-            size=3,
-            borrower=cls.user_no_perms
-        )
-        MaintenanceBookInstanceFactory.create_batch(
-            size=5,
-            borrower=cls.user_with_perms
-        )
+        ReservedBookInstanceFactory.create_batch(size=3, borrower=cls.user_no_perms)
+        MaintenanceBookInstanceFactory.create_batch(size=5, borrower=cls.user_with_perms)
         OnLoanBookInstanceFactory.create_batch(size=3, borrower=cls.user_no_perms)
-        MaintenanceBookInstanceFactory.create_batch(
-            size=7,
-            borrower=cls.user_no_perms
-        )
+        MaintenanceBookInstanceFactory.create_batch(size=7, borrower=cls.user_no_perms)
 
-        cls.url = reverse('all-borrowed')
+        cls.url = reverse("all-borrowed")
 
     def test_logged_in_uses_correct_template(self):
         self.client.force_login(self.user_with_perms)
@@ -185,9 +162,9 @@ class RenewBookLibrarianViewTest(PermissionViewTestMixin, TestCase):
     def setUpTestData(cls):
         cls.user_with_perms = LibrarianUserFactory()
         cls.user_no_perms = UserFactory()
-        
-        permission_change = Permission.objects.get(codename='change_bookinstance')
-        
+
+        permission_change = Permission.objects.get(codename="change_bookinstance")
+
         cls.user_with_perms.user_permissions.add(permission_change)
 
         cls.read_only_bookinstance = OnLoanBookInstanceFactory(borrower=cls.user_with_perms)
@@ -195,9 +172,8 @@ class RenewBookLibrarianViewTest(PermissionViewTestMixin, TestCase):
 
         cls.url = reverse("bookinstance-renew", kwargs={"pk": cls.read_only_bookinstance.pk})
         cls.another_borrower_url = reverse(
-                "bookinstance-renew", 
-                kwargs={"pk": cls.another_borrower_read_only_bookinstance.pk}
-            )
+            "bookinstance-renew", kwargs={"pk": cls.another_borrower_read_only_bookinstance.pk}
+        )
 
     def test_logged_in_with_permission_borrowed_book(self):
         self.client.force_login(self.user_with_perms)
@@ -234,7 +210,7 @@ class RenewBookLibrarianViewTest(PermissionViewTestMixin, TestCase):
                     "pk": bookinstance_to_renew.pk,
                 },
             ),
-            {"due_back": valid_date.strftime('%Y-%m-%d')}
+            {"due_back": valid_date.strftime("%Y-%m-%d")},
         )
         self.assertRedirects(response, reverse("all-borrowed"))
 
@@ -281,11 +257,9 @@ class BorrowReservedBookViewTest(TestCase):
 
         cls.url = reverse("bookinstance-borrow-reserved", kwargs={"pk": cls.read_only_bookinstance.pk})
 
-
     def test_redirects_to_login_if_anonymous(self):
         response = self.client.get(self.url)
         self.assertRedirects(response, f"/accounts/login/?next={self.url}")
-
 
     def test_returns_200_if_logged_in(self):
         self.client.force_login(self.user)
@@ -317,7 +291,7 @@ class BorrowReservedBookViewTest(TestCase):
                     "pk": bookinstance_to_borrow.pk,
                 },
             ),
-            {"due_back": valid_date.strftime('%Y-%m-%d')}
+            {"due_back": valid_date.strftime("%Y-%m-%d")},
         )
         self.assertRedirects(response, reverse("my-borrowed"))
 
@@ -361,7 +335,7 @@ class BorrowOrReserveBookViewTest(TestCase):
     def setUpTestData(cls):
         cls.user = UserFactory()
         cls.read_only_instance = AvailableBookInstanceFactory()
-        cls.read_only_url = reverse('bookinstance-borrow', kwargs={'pk': cls.read_only_instance.pk})
+        cls.read_only_url = reverse("bookinstance-borrow", kwargs={"pk": cls.read_only_instance.pk})
 
     def test_redirects_to_login_if_anonymous_user(self):
         response = self.client.get(self.read_only_url)
@@ -376,11 +350,11 @@ class BorrowOrReserveBookViewTest(TestCase):
     def test_post_valid_data_updates_instance_and_redirects(self):
         self.client.force_login(self.user)
         instance_to_mutate = AvailableBookInstanceFactory()
-        mutate_url = reverse('bookinstance-borrow', kwargs={'pk': instance_to_mutate.pk})
+        mutate_url = reverse("bookinstance-borrow", kwargs={"pk": instance_to_mutate.pk})
         valid_date = date.today() + timedelta(days=10)
         form_data = {
-            'due_back': valid_date.strftime('%Y-%m-%d'),
-            'status': InstanceStatus.ON_LOAN,
+            "due_back": valid_date.strftime("%Y-%m-%d"),
+            "status": InstanceStatus.ON_LOAN,
         }
         response = self.client.post(mutate_url, data=form_data)
         self.assertRedirects(response, reverse("my-borrowed"))
@@ -391,11 +365,11 @@ class BorrowOrReserveBookViewTest(TestCase):
     def test_post_invalid_data_does_not_update_and_returns_form_errors(self):
         self.client.force_login(self.user)
         instance_to_mutate = AvailableBookInstanceFactory()
-        mutate_url = reverse('bookinstance-borrow', kwargs={'pk': instance_to_mutate.pk})
+        mutate_url = reverse("bookinstance-borrow", kwargs={"pk": instance_to_mutate.pk})
         invalid_date = date.today() - timedelta(days=5)
         form_data = {
-            'due_back': invalid_date.strftime('%Y-%m-%d'),
-            'status': InstanceStatus.ON_LOAN,
+            "due_back": invalid_date.strftime("%Y-%m-%d"),
+            "status": InstanceStatus.ON_LOAN,
         }
         response = self.client.post(mutate_url, data=form_data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -406,11 +380,11 @@ class BorrowOrReserveBookViewTest(TestCase):
     def test_post_cannot_borrow_already_on_loan_instance(self):
         self.client.force_login(self.user)
         on_loan_instance = OnLoanBookInstanceFactory()
-        mutate_url = reverse('bookinstance-borrow', kwargs={'pk': on_loan_instance.pk})
+        mutate_url = reverse("bookinstance-borrow", kwargs={"pk": on_loan_instance.pk})
         valid_date = date.today() + timedelta(days=10)
         form_data = {
-            'due_back': valid_date.strftime('%Y-%m-%d'),
-            'status': InstanceStatus.ON_LOAN,
+            "due_back": valid_date.strftime("%Y-%m-%d"),
+            "status": InstanceStatus.ON_LOAN,
         }
         response = self.client.post(mutate_url, data=form_data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -421,11 +395,11 @@ class BorrowOrReserveBookViewTest(TestCase):
     def test_post_can_reserve_available_instance(self):
         self.client.force_login(self.user)
         instance_to_reserve = AvailableBookInstanceFactory()
-        mutate_url = reverse('bookinstance-borrow', kwargs={'pk': instance_to_reserve.pk})
+        mutate_url = reverse("bookinstance-borrow", kwargs={"pk": instance_to_reserve.pk})
         valid_date = date.today() + timedelta(days=7)
         form_data = {
-            'due_back': valid_date.strftime('%Y-%m-%d'),
-            'status': InstanceStatus.RESERVED,
+            "due_back": valid_date.strftime("%Y-%m-%d"),
+            "status": InstanceStatus.RESERVED,
         }
         response = self.client.post(mutate_url, data=form_data)
         self.assertRedirects(response, reverse("my-borrowed"))
@@ -439,8 +413,8 @@ class ChangeBookStatusViewTest(PermissionViewTestMixin, TestCase):
     def setUpTestData(cls):
         cls.user_with_perms = LibrarianUserFactory()
         cls.user_no_perms = UserFactory()
-        
-        can_change_perm = Permission.objects.get(codename='can_change_status')
+
+        can_change_perm = Permission.objects.get(codename="can_change_status")
         cls.user_with_perms.user_permissions.add(can_change_perm)
 
         cls.read_only_instance = OnLoanBookInstanceFactory()
@@ -460,49 +434,47 @@ class ChangeBookStatusViewTest(PermissionViewTestMixin, TestCase):
 
     def test_post_valid_data_status_available_without_due_back(self):
         self.client.force_login(self.user_with_perms)
-        
+
         instance_to_mutate = OnLoanBookInstanceFactory()
         mutate_url = reverse("bookinstance-change-status", kwargs={"pk": instance_to_mutate.pk})
-        
+
         form_data = {
             "status": InstanceStatus.AVAILABLE,
             "due_back": "",
         }
-        
+
         response = self.client.post(mutate_url, data=form_data)
         self.assertRedirects(response, reverse("all-borrowed"))
-        
+
         updated_instance = BookInstance.objects.get(pk=instance_to_mutate.pk)
         self.assertEqual(updated_instance.status, InstanceStatus.AVAILABLE)
         self.assertIsNone(updated_instance.due_back)
 
     def test_post_invalid_data_status_available_with_due_back_returns_error(self):
         self.client.force_login(self.user_with_perms)
-        
+
         instance_to_mutate = OnLoanBookInstanceFactory()
         mutate_url = reverse("bookinstance-change-status", kwargs={"pk": instance_to_mutate.pk})
-        
+
         invalid_date = datetime.date.today() + datetime.timedelta(weeks=2)
         form_data = {
             "status": InstanceStatus.AVAILABLE,
             "due_back": invalid_date.strftime("%Y-%m-%d"),
         }
-        
+
         response = self.client.post(mutate_url, data=form_data)
-        
+
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertFormError(
-            response.context["form"], 
-            "due_back", 
-            "The due back field must be empty for this status!"
+            response.context["form"], "due_back", "The due back field must be empty for this status!"
         )
+
 
 class ReturnBookViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user_with_perms = LibrarianUserFactory()
         cls.user_no_perms = UserFactory()
-
 
         cls.read_only_instance = OnLoanBookInstanceFactory()
         cls.url = reverse("bookinstance-return", kwargs={"pk": cls.read_only_instance.pk})
@@ -534,40 +506,40 @@ class ReturnBookViewTest(TestCase):
 
     def test_post_valid_request_returns_book_adds_message_and_redirects(self):
         self.client.force_login(self.user_with_perms)
-        
+
         instance_to_mutate = OnLoanBookInstanceFactory()
         mutate_url = reverse("bookinstance-return", kwargs={"pk": instance_to_mutate.pk})
-        
+
         response = self.client.post(mutate_url)
-        
+
         self.assertRedirects(response, reverse("all-borrowed"))
-        
+
         updated_instance = BookInstance.objects.get(pk=instance_to_mutate.pk)
         self.assertEqual(updated_instance.status, InstanceStatus.AVAILABLE)
         self.assertIsNone(updated_instance.borrower)
         self.assertIsNone(updated_instance.due_back)
-        
+
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
         self.assertEqual(
-            str(messages[0]), 
-            f"Book '{updated_instance.book.title}' ({updated_instance.id}) successfuly returned."
+            str(messages[0]),
+            f"Book '{updated_instance.book.title}' ({updated_instance.id}) successfuly returned.",
         )
-        self.assertEqual(messages[0].level_tag, 'success')
+        self.assertEqual(messages[0].level_tag, "success")
 
-    @patch('catalog.views.return_book')
+    @patch("catalog.views.return_book")
     def test_post_exception_adds_error_message_and_redirects(self, mock_return_book):
         self.client.force_login(self.user_with_perms)
         mock_return_book.side_effect = Exception("Simulated database error")
-        
+
         instance_to_mutate = OnLoanBookInstanceFactory()
         mutate_url = reverse("bookinstance-return", kwargs={"pk": instance_to_mutate.pk})
-        
+
         response = self.client.post(mutate_url)
-        
+
         self.assertRedirects(response, reverse("all-borrowed"))
-        
+
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), "Error during returning: Simulated database error")
-        self.assertEqual(messages[0].level_tag, 'error')
+        self.assertEqual(messages[0].level_tag, "error")

@@ -9,7 +9,6 @@ pytestmark = pytest.mark.django_db
 
 
 class TestLanguageViewSet:
-
     def test_list_anonymous(self, api_client):
         LanguageFactory.create_batch(2)
         response = api_client.get(reverse("api-language-list"))

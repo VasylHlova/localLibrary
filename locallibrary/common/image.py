@@ -3,11 +3,10 @@ import logging
 import os
 from io import BytesIO
 
-from PIL import Image, ImageOps
-
 from django.core.files.base import ContentFile, File
 from django.db import models
 from django.utils.deconstruct import deconstructible
+from PIL import Image, ImageOps
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,6 @@ class ImageProcessingMixin:
         super().save(*args, **kwargs)
         image_field = getattr(self, field_name, None)
         self._original_image = image_field.name if image_field else None
-
 
 
 @deconstructible
@@ -70,6 +68,6 @@ def process_image(image: File, max_size: tuple[int, int] = (800, 800)) -> File |
     except Exception:
         logger.exception(
             "Image processing failed for '%s'. File will be saved unprocessed.",
-            getattr(image, 'name', repr(image)),
+            getattr(image, "name", repr(image)),
         )
         return None

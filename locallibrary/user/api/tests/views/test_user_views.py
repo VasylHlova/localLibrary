@@ -2,13 +2,15 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-from user.tests.helper.factories import UserFactory, ProfileFactory
+from user.tests.helper.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
+
 
 @pytest.fixture
 def api_client():
     return APIClient()
+
 
 class TestUserViewSet:
     def test_list_users_anonymous_forbidden(self, api_client):

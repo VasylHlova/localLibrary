@@ -8,7 +8,6 @@ pytestmark = pytest.mark.django_db
 
 
 class TestAuthorViewSet:
-
     def test_list_returns_all_authors(self, api_client):
         AuthorFactory.create_batch(4)
         response = api_client.get(reverse("api-author-list"))

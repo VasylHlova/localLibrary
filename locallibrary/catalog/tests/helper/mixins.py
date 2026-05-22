@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+
 class PermissionViewTestMixin:
     url = None
 

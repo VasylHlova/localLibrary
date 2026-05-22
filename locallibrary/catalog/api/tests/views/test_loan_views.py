@@ -2,14 +2,12 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
-from catalog.models import Loan
 from catalog.tests.helper.factories import LoanFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
 
 
 class TestLoanReadViewSet:
-
     def test_list_requires_view_loan_permission(self, api_client):
         user = UserFactory()
         api_client.force_authenticate(user=user)

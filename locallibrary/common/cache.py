@@ -1,11 +1,11 @@
-from typing import Any
 import hashlib
+from typing import Any
 from urllib.parse import urlencode
-from django.db.models import Model
 
-from rest_framework.response import Response
 from django.core.cache import cache
 from django.core.paginator import Page, Paginator
+from django.db.models import Model
+from rest_framework.response import Response
 
 
 def get_model_cache_version(model_name: str) -> int:
@@ -77,8 +77,7 @@ class DRFVersionedCacheListMixin:
         model_name = self.get_queryset().model._meta.model_name
         version = get_model_cache_version(model_name)
         params_hash = hashlib.md5(
-            urlencode(sorted(request.query_params.dict().items())).encode(),
-            usedforsecurity=False
+            urlencode(sorted(request.query_params.dict().items())).encode(), usedforsecurity=False
         ).hexdigest()
         cache_key = self._build_cache_key(request, model_name, version, params_hash)
 
@@ -93,5 +92,5 @@ class DRFVersionedCacheListMixin:
 
 class DRFUserVersionedCacheListMixin(DRFVersionedCacheListMixin):
     def _build_cache_key(self, request, model_name, version, params_hash) -> str:
-        user_id = request.user.id if request.user.is_authenticated else 'anonymous'
+        user_id = request.user.id if request.user.is_authenticated else "anonymous"
         return f"api_{model_name}_list_v{version}_user_{user_id}_{params_hash}"

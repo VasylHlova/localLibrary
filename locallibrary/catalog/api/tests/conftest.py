@@ -1,21 +1,21 @@
 import pytest
-from rest_framework.test import APIClient
 from pytest_factoryboy import register
+from rest_framework.test import APIClient
 
 from catalog.tests.helper.factories import (
-    BookFactory,
     AuthorFactory,
-    LanguageFactory,
+    AvailableBookInstanceFactory,
+    BookFactory,
+    BookInstanceFactory,
     GenreFactory,
+    LanguageFactory,
+    LibrarianUserFactory,
     LoanFactory,
+    MaintenanceBookInstanceFactory,
     OnLoanBookInstanceFactory,
     OverdueBookInstanceFactory,
-    UserFactory,
     ReservedBookInstanceFactory,
-    AvailableBookInstanceFactory,
-    MaintenanceBookInstanceFactory,
-    LibrarianUserFactory,
-    BookInstanceFactory,
+    UserFactory,
 )
 
 register(BookFactory)
@@ -32,6 +32,7 @@ register(AvailableBookInstanceFactory)
 register(MaintenanceBookInstanceFactory)
 register(LibrarianUserFactory)
 register(BookInstanceFactory)
+
 
 @pytest.fixture
 def api_client():
@@ -59,6 +60,7 @@ def setup_permissions(django_db_setup, django_db_blocker):
     with django_db_blocker.unblock():
         from django.contrib.auth.models import Permission
         from django.contrib.contenttypes.models import ContentType
+
         from catalog.models import BookInstance
 
         # Ensure custom permissions exist in test database
@@ -68,11 +70,8 @@ def setup_permissions(django_db_setup, django_db_blocker):
             ("can_change_due_back", "Set due back date"),
             ("can_change_status", "Can change book status"),
         ]:
-            Permission.objects.get_or_create(
-                codename=codename,
-                content_type=ct,
-                defaults={"name": name}
-            )
+            Permission.objects.get_or_create(codename=codename, content_type=ct, defaults={"name": name})
+
 
 @pytest.fixture
 def staff_user(db, setup_permissions):
@@ -81,13 +80,30 @@ def staff_user(db, setup_permissions):
     librarian = LibrarianUserFactory()
     perms = Permission.objects.filter(
         codename__in=[
-            "view_bookinstance", "add_bookinstance", "change_bookinstance", "delete_bookinstance",
-            "view_book", "add_book", "change_book", "delete_book",
-            "view_author", "add_author", "change_author", "delete_author",
-            "view_genre", "add_genre", "change_genre", "delete_genre",
-            "view_language", "add_language", "change_language", "delete_language",
+            "view_bookinstance",
+            "add_bookinstance",
+            "change_bookinstance",
+            "delete_bookinstance",
+            "view_book",
+            "add_book",
+            "change_book",
+            "delete_book",
+            "view_author",
+            "add_author",
+            "change_author",
+            "delete_author",
+            "view_genre",
+            "add_genre",
+            "change_genre",
+            "delete_genre",
+            "view_language",
+            "add_language",
+            "change_language",
+            "delete_language",
             "view_loan",
-            "can_mark_returned", "can_change_due_back", "can_change_status",
+            "can_mark_returned",
+            "can_change_due_back",
+            "can_change_status",
         ]
     )
     librarian.user_permissions.set(perms)

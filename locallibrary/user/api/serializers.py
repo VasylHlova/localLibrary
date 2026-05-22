@@ -5,23 +5,23 @@ from user.validators import validate_user_age
 
 
 class UserShortSerializer(serializers.ModelSerializer):
-    detail_url = serializers.HyperlinkedIdentityField(view_name='api-user-detail')
+    detail_url = serializers.HyperlinkedIdentityField(view_name="api-user-detail")
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'first_name', 'last_name', 'detail_url']
+        fields = ["id", "first_name", "last_name", "detail_url"]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['role', 'date_of_birth', 'profile_picture']
+        fields = ["role", "date_of_birth", "profile_picture"]
 
 
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'first_name', 'last_name', 'email']
+        fields = ["id", "first_name", "last_name", "email"]
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -29,22 +29,20 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'profile']
+        fields = ["id", "first_name", "last_name", "email", "username", "profile"]
 
 
 class UserWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'username', 'password']
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
+        fields = ["first_name", "last_name", "email", "username", "password"]
+        extra_kwargs = {"password": {"write_only": True}}
 
     def create(self, validated_data):
         return CustomUser.objects.create_user(**validated_data)
 
     def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
+        password = validated_data.pop("password", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
@@ -54,11 +52,8 @@ class UserWriteSerializer(serializers.ModelSerializer):
 
 
 class UserProfileWriteSerializer(serializers.ModelSerializer):
-    date_of_birth = serializers.DateField(
-        required=False, allow_null=True,
-        validators=[validate_user_age]
-    )
+    date_of_birth = serializers.DateField(required=False, allow_null=True, validators=[validate_user_age])
 
     class Meta:
         model = UserProfile
-        fields = ['date_of_birth', 'profile_picture']
+        fields = ["date_of_birth", "profile_picture"]

@@ -1,17 +1,17 @@
+from common.mixins import MultiSerializerMixin
+from common.permissions import StrictDjangoModelPermissions
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from user.models import CustomUser, UserProfile
 from user.api.serializers import (
-    UserListSerializer,
     UserDetailSerializer,
-    UserWriteSerializer,
+    UserListSerializer,
     UserProfileWriteSerializer,
+    UserWriteSerializer,
 )
-from common.permissions import StrictDjangoModelPermissions
-from common.mixins import MultiSerializerMixin
+from user.models import CustomUser, UserProfile
 
 
 class UserViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
@@ -79,4 +79,3 @@ class UserViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(UserDetailSerializer(request.user, context={"request": request}).data)
-

@@ -1,20 +1,20 @@
 import uuid
 from datetime import date
 
-from catalog.choices import InstanceStatus, LoanStatus
-from common.image import ImageProcessingMixin, GeneratePath
+from common.image import GeneratePath, ImageProcessingMixin
 from common.validators import validate_file_size
-
 from django.conf import settings
+from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from django.contrib import admin
 from django.db import models
-from django.db.models import UniqueConstraint, Q, CheckConstraint, F
+from django.db.models import CheckConstraint, F, Q, UniqueConstraint
 from django.db.models.functions import Lower
 from django.urls import reverse
 
+from catalog.choices import InstanceStatus, LoanStatus
 from catalog.managers import BookInstanceManager
+
 
 class Genre(models.Model):
     name = models.CharField(
@@ -53,7 +53,7 @@ class Language(models.Model):
 
 
 class Book(ImageProcessingMixin, models.Model):
-    IMAGE_FIELD = 'image'
+    IMAGE_FIELD = "image"
     IMAGE_SIZE = (600, 350)
 
     title = models.CharField(max_length=200)
@@ -63,9 +63,9 @@ class Book(ImageProcessingMixin, models.Model):
         "ISBN",
         max_length=13,
         unique=True,
-        help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">' \
-        'ISBN number'
-        '</a>',
+        help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">'
+        "ISBN number"
+        "</a>",
     )
     genre = models.ManyToManyField(
         "catalog.Genre", help_text="Select a genre for this book", related_name="books"
@@ -89,7 +89,6 @@ class Book(ImageProcessingMixin, models.Model):
         ],
     )
 
-
     def __str__(self) -> str:
         return str(self.title)
 
@@ -99,7 +98,6 @@ class Book(ImageProcessingMixin, models.Model):
     @admin.display(description="Genre")
     def display_genre(self) -> str:
         return ", ".join(genre.name for genre in self.genre.all()[:3])
-
 
 
 class BookInstance(models.Model):
@@ -136,29 +134,30 @@ class BookInstance(models.Model):
             ("can_change_status", "Can change book status"),
         )
         constraints = [
-                CheckConstraint(
-                    condition=(
-                        ~Q(status__in=[InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]) 
-                        | 
-                        (Q(due_back__isnull=False) & Q(borrower__isnull=False))
-                    ),
-                    name='check_due_back_and_borrower_if_on_loan_or_reserved',
-                    violation_error_message="Due back date and borrower cannot be empty when book is on loan or reserved."
-                )
+            CheckConstraint(
+                condition=(
+                    ~Q(status__in=[InstanceStatus.ON_LOAN, InstanceStatus.RESERVED])
+                    | (Q(due_back__isnull=False) & Q(borrower__isnull=False))
+                ),
+                name="check_due_back_and_borrower_if_on_loan_or_reserved",
+                violation_error_message=(
+                    "Due back date and borrower cannot be empty " 
+                    "when book is on loan or reserved."
+                ),
+            )
         ]
         indexes = [models.Index(fields=["borrower"]), models.Index(fields=["book"])]
 
     def __str__(self) -> str:
         return f"{self.id} ({self.book.title})"
-    
+
     @property
     def is_overdue(self) -> bool:
         return bool(self.due_back and date.today() > self.due_back)
 
 
-
 class Author(ImageProcessingMixin, models.Model):
-    IMAGE_FIELD = 'image'
+    IMAGE_FIELD = "image"
     IMAGE_SIZE = (500, 400)
 
     first_name = models.CharField(max_length=100)
@@ -175,21 +174,18 @@ class Author(ImageProcessingMixin, models.Model):
             FileExtensionValidator(
                 allowed_extensions=["jpeg", "png", "webp", "jpg", "svg"], message="Invalid file extension"
             ),
-            
-        ]
+        ],
     )
-    
-
 
     class Meta:
         ordering = ["last_name", "first_name"]
         constraints = [
             CheckConstraint(
-                condition=Q(date_of_birth__isnull=True) 
-                    | Q(date_of_death__isnull=True) 
-                    | Q(date_of_birth__lte=F("date_of_death")),
+                condition=Q(date_of_birth__isnull=True)
+                | Q(date_of_death__isnull=True)
+                | Q(date_of_birth__lte=F("date_of_death")),
                 name="check_birth_before_death",
-                violation_error_message="Author could not die earlier than was born!"
+                violation_error_message="Author could not die earlier than was born!",
             )
         ]
 
@@ -218,25 +214,26 @@ class Loan(models.Model):
 
     status = models.CharField(max_length=20, choices=LoanStatus.choices, default=LoanStatus.ACTIVE)
 
-    class Meta:                                                                                                                                                                              
-        indexes = [                                                                                                                                                                          
-            models.Index(fields=['book_instance', 'returned_at']),                                                                                                                           
-            models.Index(fields=['borrower', 'returned_at']),                                                                                                                                
-            models.Index(fields=['borrower']),                                                                                                                                               
-        ]  
+    class Meta:
+        indexes = [
+            models.Index(fields=["book_instance", "returned_at"]),
+            models.Index(fields=["borrower", "returned_at"]),
+            models.Index(fields=["borrower"]),
+        ]
+
+    def __str__(self):
+        return f"{self.borrower.first_name} {self.borrower.last_name}, loan status: {self.status}"
 
     @property
     def is_overdue(self) -> bool:
         return self.overdue_days > 0
-    
+
     @property
     def overdue_days(self) -> int:
         end_date = self.returned_at if self.returned_at else date.today()
-     
+
         if not self.book_instance.due_back or end_date <= self.book_instance.due_back:
             return 0
-            
+
         return (end_date - self.book_instance.due_back).days
 
-    def __str__(self):
-        return f'{self.borrower.first_name} {self.borrower.last_name}, loan status: {self.status}'

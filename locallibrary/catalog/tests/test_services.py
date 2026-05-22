@@ -1,26 +1,25 @@
 from datetime import date, timedelta
 
-from django.test import TestCase
 from django.db import IntegrityError, transaction
+from django.test import TestCase
 
-from catalog.models import Loan
 from catalog.choices import InstanceStatus, LoanStatus
+from catalog.models import Loan
 from catalog.services import (
+    _close_loan,
     borrow_or_reserve_book,
     borrow_reserved_book,
+    renew_book,
     return_book,
-    _close_loan,
-    renew_book
 )
 from catalog.tests.helper.factories import (
-    UserFactory,
     AvailableBookInstanceFactory,
-    OnLoanBookInstanceFactory,
-    ReservedBookInstanceFactory,
     LoanFactory,
-    OverdueBookInstanceFactory,
-    BookInstanceFactory,
     MaintenanceBookInstanceFactory,
+    OnLoanBookInstanceFactory,
+    OverdueBookInstanceFactory,
+    ReservedBookInstanceFactory,
+    UserFactory,
 )
 
 
@@ -33,10 +32,7 @@ class BorrowOrReserveBookServiceTest(TestCase):
         instance = AvailableBookInstanceFactory()
 
         borrow_or_reserve_book(
-            book_instance=instance,
-            user=self.user,
-            due_back=self.due_back,
-            status=InstanceStatus.ON_LOAN
+            book_instance=instance, user=self.user, due_back=self.due_back, status=InstanceStatus.ON_LOAN
         )
 
         self.assertEqual(instance.borrower, self.user)
@@ -54,17 +50,12 @@ class BorrowOrReserveBookServiceTest(TestCase):
         instance = AvailableBookInstanceFactory()
 
         borrow_or_reserve_book(
-            book_instance=instance,
-            user=self.user,
-            due_back=self.due_back,
-            status=InstanceStatus.RESERVED
+            book_instance=instance, user=self.user, due_back=self.due_back, status=InstanceStatus.RESERVED
         )
 
         self.assertEqual(instance.status, InstanceStatus.RESERVED)
         self.assertEqual(instance.borrower, self.user)
-        self.assertFalse(
-            Loan.objects.filter(book_instance=instance).exists()
-        )
+        self.assertFalse(Loan.objects.filter(book_instance=instance).exists())
 
     def test_raises_value_error_when_invalid_status(self):
         instance = AvailableBookInstanceFactory()
@@ -206,11 +197,7 @@ class BorrowReservedBookServiceTest(TestCase):
     def test_borrow_reserved_updates_status_and_borrower_and_create_loan(self):
         instance = ReservedBookInstanceFactory(borrower=self.user)
 
-        borrow_reserved_book(
-            book_instance=instance,
-            user=self.user,
-            due_back=self.due_back
-        )
+        borrow_reserved_book(book_instance=instance, user=self.user, due_back=self.due_back)
 
         instance.refresh_from_db()
         self.assertEqual(instance.status, InstanceStatus.ON_LOAN)
@@ -223,26 +210,18 @@ class BorrowReservedBookServiceTest(TestCase):
                 status=LoanStatus.ACTIVE,
             ).exists()
         )
-        
+
     def test_raises_value_error_when_not_reserved(self):
         instance = AvailableBookInstanceFactory()
 
         with self.assertRaises(ValueError):
-            borrow_reserved_book(
-                book_instance=instance,
-                user=self.user,
-                due_back=self.due_back
-            )
+            borrow_reserved_book(book_instance=instance, user=self.user, due_back=self.due_back)
 
     def test_raises_value_error_when_on_loan(self):
         instance = OnLoanBookInstanceFactory()
 
         with self.assertRaises(ValueError):
-            borrow_reserved_book(
-                book_instance=instance,
-                user=self.user,
-                due_back=self.due_back
-            )
+            borrow_reserved_book(book_instance=instance, user=self.user, due_back=self.due_back)
 
 
 class CloseLoanServiceTest(TestCase):

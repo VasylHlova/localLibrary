@@ -9,7 +9,6 @@ pytestmark = pytest.mark.django_db
 
 
 class TestGenreViewSet:
-
     def test_list_anonymous(self, api_client):
         GenreFactory.create_batch(3)
         response = api_client.get(reverse("api-genre-list"))
@@ -35,9 +34,7 @@ class TestGenreViewSet:
     def test_update_staff(self, api_client, staff_user):
         api_client.force_authenticate(user=staff_user)
         genre = GenreFactory(name="Old")
-        response = api_client.put(
-            reverse("api-genre-detail", args=[genre.pk]), {"name": "New"}
-        )
+        response = api_client.put(reverse("api-genre-detail", args=[genre.pk]), {"name": "New"})
         assert response.status_code == status.HTTP_200_OK
         genre.refresh_from_db()
         assert genre.name == "New"

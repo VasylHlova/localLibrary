@@ -1,14 +1,14 @@
 import datetime
 
-from django.test import TestCase
 from django import forms
+from django.test import TestCase
 
 from catalog.choices import InstanceStatus
 from catalog.forms import (
     BookInstanceStatusDueBackValidationMixin,
     BorrowOrReserveBookForm,
-    ChangeBookStatusForm,
     ChangeBookInstanceDueBackBaseForm,
+    ChangeBookStatusForm,
 )
 
 
@@ -48,27 +48,21 @@ class BookInstanceStatusDueBackValidationMixinTest(TestCase):
 
     def test_past_due_date_is_invalid(self):
         past_date = datetime.date.today() - datetime.timedelta(days=1)
-        form = self.TestForm(
-            data={"status": InstanceStatus.ON_LOAN, "due_back": past_date}
-        )
+        form = self.TestForm(data={"status": InstanceStatus.ON_LOAN, "due_back": past_date})
         self.assertFalse(form.is_valid())
         self.assertIn("due_back", form.errors)
         self.assertEqual(form.errors["due_back"][0], "Invalid date - renewal in past!")
 
     def test_term_limit_exceeded_for_loan_status(self):
         too_far = datetime.date.today() + datetime.timedelta(weeks=4) + datetime.timedelta(days=1)
-        form = self.TestForm(
-            data={"status": InstanceStatus.ON_LOAN, "due_back": too_far}
-        )
+        form = self.TestForm(data={"status": InstanceStatus.ON_LOAN, "due_back": too_far})
         self.assertFalse(form.is_valid())
         self.assertIn("due_back", form.errors)
         self.assertEqual(form.errors["due_back"][0], "Invalid date - renewal more than 4 weeks ahead!")
 
     def test_term_limit_exceeded_for_reserve_status(self):
         too_far = datetime.date.today() + datetime.timedelta(weeks=2) + datetime.timedelta(days=1)
-        form = self.TestForm(
-            data={"status": InstanceStatus.RESERVED, "due_back": too_far}
-        )
+        form = self.TestForm(data={"status": InstanceStatus.RESERVED, "due_back": too_far})
         self.assertFalse(form.is_valid())
         self.assertIn("due_back", form.errors)
         self.assertEqual(form.errors["due_back"][0], "Invalid date - renewal more than 2 weeks ahead!")
@@ -106,13 +100,19 @@ class BorrowOrReserveBookFormTest(TestCase):
 
     def test_reserve_with_valid_date_is_valid(self):
         form = BorrowOrReserveBookForm(
-            data={"status": InstanceStatus.RESERVED, "due_back": datetime.date.today() + datetime.timedelta(weeks=1)},
+            data={
+                "status": InstanceStatus.RESERVED,
+                "due_back": datetime.date.today() + datetime.timedelta(weeks=1),
+            },
         )
         self.assertTrue(form.is_valid())
 
     def test_past_due_back_is_invalid(self):
         form = BorrowOrReserveBookForm(
-            data={"status": InstanceStatus.ON_LOAN, "due_back": datetime.date.today() - datetime.timedelta(days=1)},
+            data={
+                "status": InstanceStatus.ON_LOAN,
+                "due_back": datetime.date.today() - datetime.timedelta(days=1),
+            },
         )
         self.assertFalse(form.is_valid())
         self.assertIn("due_back", form.errors)

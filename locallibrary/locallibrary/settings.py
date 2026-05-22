@@ -14,8 +14,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
 from celery.schedules import crontab
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -30,11 +30,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
+SITE_URL = os.getenv("SITE_URL", "http://127.0.0.1:8000")
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
 
 # Application definition
@@ -49,8 +49,8 @@ INSTALLED_APPS = [
     "catalog.apps.CatalogConfig",
     "user.apps.UserConfig",
     "rest_framework",
-    'django_filters',
-    'drf_spectacular',
+    "django_filters",
+    "drf_spectacular",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
@@ -156,12 +156,12 @@ USE_TZ = True
 
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
 DEFAULT_FROM_EMAIL = f"Library <{EMAIL_HOST_USER}>"
 
@@ -211,18 +211,18 @@ ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_LOGIN_BY_CODE_ENABLED = False
 
 REST_AUTH = {
-    'USE_JWT': True,
-    'JWT_AUTH_COOKIE': 'local-library-auth',
-    'JWT_AUTH_REFRESH_COOKIE': 'local-library-refresh-token',
-    'USER_DETAILS_SERIALIZER': 'dj_rest_auth.serializers.UserDetailsSerializer',
+    "USE_JWT": True,
+    "JWT_AUTH_COOKIE": "local-library-auth",
+    "JWT_AUTH_REFRESH_COOKIE": "local-library-refresh-token",
+    "USER_DETAILS_SERIALIZER": "dj_rest_auth.serializers.UserDetailsSerializer",
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 ACCOUNT_SIGNUP_FIELDS = ["email*", "first_name", "last_name", "password1"]
@@ -286,48 +286,43 @@ CACHES = {
 }
 
 # Celery
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
 
-CELERY_TIMEZONE = TIME_ZONE 
-CELERY_TASK_TRACK_STARTED = True  
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
 
 CELERY_BEAT_SCHEDULE = {
-    'send-reminders-daily': {
-        'task': 'catalog.check_expiring_loans',
-        'schedule': crontab(hour=8, minute=0),
+    "send-reminders-daily": {
+        "task": "catalog.check_expiring_loans",
+        "schedule": crontab(hour=8, minute=0),
     },
-
-    'cleanup-reservations-daily': {
-        'task': 'catalog.update_status_on_exipiring_reservetion_date',
-        'schedule': crontab(hour=1, minute=0), 
+    "cleanup-reservations-daily": {
+        "task": "catalog.update_status_on_exipiring_reservetion_date",
+        "schedule": crontab(hour=1, minute=0),
     },
 }
 
 # DRF
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
-    ),
-    'DEFAULT_PAGINATION_CLASS': 'common.pagination.CustomPageNumberPagination',
-    'PAGE_SIZE': 10,
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticatedOrReadOnly",),
+    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_PAGINATION_CLASS": "common.pagination.CustomPageNumberPagination",
+    "PAGE_SIZE": 10,
 }
 
 # drf-spectacular
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'LocalLibrary API',
-    'DESCRIPTION': 'REST API for the LocalLibrary project.',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,  # exclude the schema endpoint itself from the schema
+    "TITLE": "LocalLibrary API",
+    "DESCRIPTION": "REST API for the LocalLibrary project.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,  # exclude the schema endpoint itself from the schema
 }

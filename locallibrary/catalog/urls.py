@@ -10,7 +10,11 @@ urlpatterns = [
     path("book/<int:pk>/update/", views.BookUpdate.as_view(), name="book-update"),
     path("book/<int:pk>/delete/", views.BookDelete.as_view(), name="book-delete"),
     path("mybooks/", views.UserBorrowedBooksListView.as_view(), name="my-borrowed"),
-    path("mybooks/<uuid:pk>/borrow/", views.BorrowReservedBookView.as_view(), name="bookinstance-borrow-reserved"),
+    path(
+        "mybooks/<uuid:pk>/borrow/",
+        views.BorrowReservedBookView.as_view(),
+        name="bookinstance-borrow-reserved",
+    ),
     path("borrowedbooks/", views.AllBorrowedBooksListView.as_view(), name="all-borrowed"),
     path("book/<uuid:pk>/renew/", views.RenewBookLibrarianView.as_view(), name="bookinstance-renew"),
     path("book/<uuid:pk>/borrow/", views.BorrowOrReserveBookView.as_view(), name="bookinstance-borrow"),

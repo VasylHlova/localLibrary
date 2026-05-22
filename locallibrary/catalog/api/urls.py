@@ -1,13 +1,13 @@
 from rest_framework.routers import DefaultRouter
 
 from catalog.api.views import (
-    LanguageViewSet,
-    GenreViewSet,
     AuthorViewSet,
-    BookViewSet,
-    BookInstanceViewSet,
     BookActionViewSet,
-    LoanReadViewSet
+    BookInstanceViewSet,
+    BookViewSet,
+    GenreViewSet,
+    LanguageViewSet,
+    LoanReadViewSet,
 )
 
 router = DefaultRouter()

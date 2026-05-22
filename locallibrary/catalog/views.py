@@ -4,7 +4,7 @@ from common.cache import VersionedCacheListMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import QuerySet, ProtectedError
+from django.db.models import ProtectedError, QuerySet
 from django.forms import Form
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -14,20 +14,21 @@ from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from catalog.forms import (
-    BorrowOrReserveBookForm, 
+    BorrowOrReserveBookForm,
+    BorrowReservedBookForm,
     ChangeBookStatusForm,
-    BorrowReservedBookForm, 
     RenewBookForm,
 )
 from catalog.models import (
-    Author, Book, 
+    Author,
+    Book,
     BookInstance,
 )
 from catalog.services import (
     borrow_or_reserve_book,
-    return_book,
-    renew_book,
     borrow_reserved_book,
+    renew_book,
+    return_book,
 )
 
 
@@ -67,7 +68,7 @@ class AuthorDetailView(DetailView):
     model = Author
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('books__instances')
+        return super().get_queryset().prefetch_related("books__instances")
 
 
 class AuthorCreate(PermissionRequiredMixin, CreateView):
@@ -102,25 +103,30 @@ class BookListView(VersionedCacheListMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self) -> QuerySet[Book]:
-        return Book.objects.select_related("author").prefetch_related("genre").order_by('title')
+        return Book.objects.select_related("author").prefetch_related("genre").order_by("title")
 
 
 class BookDetailView(DetailView):
     model = Book
 
     def get_queryset(self):
-        return super().get_queryset().select_related('author', 'language').prefetch_related('instances', 'genre')
+        return (
+            super()
+            .get_queryset()
+            .select_related("author", "language")
+            .prefetch_related("instances", "genre")
+        )
 
 
 class BookCreate(PermissionRequiredMixin, CreateView):
     model = Book
-    fields = ["title", "author", "summary", "isbn", "genre", "image", 'language']
+    fields = ["title", "author", "summary", "isbn", "genre", "image", "language"]
     permission_required = "catalog.add_book"
 
 
 class BookUpdate(PermissionRequiredMixin, UpdateView):
     model = Book
-    fields = ["title", "author", "summary", "isbn", "genre", "image", 'language']
+    fields = ["title", "author", "summary", "isbn", "genre", "image", "language"]
     permission_required = "catalog.change_book"
 
 
@@ -156,7 +162,9 @@ class UserBorrowedBooksListView(LoginRequiredMixin, VersionedCacheListMixin, Lis
         )
 
 
-class AllBorrowedBooksListView(LoginRequiredMixin, PermissionRequiredMixin, VersionedCacheListMixin, ListView):
+class AllBorrowedBooksListView(
+    LoginRequiredMixin, PermissionRequiredMixin, VersionedCacheListMixin, ListView
+):
     model = BookInstance
     template_name = "catalog/bookinstance_list_borrowed.html"
     permission_required = "catalog.can_mark_returned", "catalog.view_bookinstance"
@@ -170,7 +178,7 @@ class AllBorrowedBooksListView(LoginRequiredMixin, PermissionRequiredMixin, Vers
         )
 
 
-class RenewBookLibrarianView(LoginRequiredMixin,PermissionRequiredMixin, UpdateView):
+class RenewBookLibrarianView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = BookInstance
     form_class = RenewBookForm
     template_name = "catalog/book_renew_librarian.html"
@@ -179,10 +187,7 @@ class RenewBookLibrarianView(LoginRequiredMixin,PermissionRequiredMixin, UpdateV
 
     def form_valid(self, form: Form) -> HttpResponse:
         try:
-            renew_book(
-                book_instance=self.object,
-                due_back=form.cleaned_data.get('due_back')
-            )
+            renew_book(book_instance=self.object, due_back=form.cleaned_data.get("due_back"))
         except ValueError as e:
             form.add_error(None, str(e))
             return self.form_invalid(form)
@@ -228,14 +233,15 @@ class BorrowOrReserveBookView(LoginRequiredMixin, View):
                     book_instance=instance,
                     user=request.user,
                     due_back=form.cleaned_data.get("due_back"),
-                    status=form.cleaned_data.get("status")
+                    status=form.cleaned_data.get("status"),
                 )
             except ValueError as e:
                 form.add_error(None, str(e))
                 return render(request, self.template_name, {"form": form, "object": instance})
             return redirect("my-borrowed")
-        return render(request, self.template_name, {"form": form, "object": instance}) 
-    
+        return render(request, self.template_name, {"form": form, "object": instance})
+
+
 class ChangeBookStatusView(PermissionRequiredMixin, UpdateView):
     model = BookInstance
     form_class = ChangeBookStatusForm

@@ -1,23 +1,22 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from django.urls import reverse
 from rest_framework import status
 
 from catalog.choices import InstanceStatus
-from catalog.models import BookInstance
 from catalog.tests.helper.factories import (
-    BookFactory,
-    UserFactory,
     AvailableBookInstanceFactory,
-    OnLoanBookInstanceFactory,
+    BookFactory,
     MaintenanceBookInstanceFactory,
+    OnLoanBookInstanceFactory,
+    UserFactory,
 )
 
 pytestmark = pytest.mark.django_db
 
 
 class TestGetBookInstanceQueryset:
-
     def test_anonymous_sees_only_available(self, api_client):
         AvailableBookInstanceFactory.create_batch(2)
         OnLoanBookInstanceFactory()
@@ -48,7 +47,6 @@ class TestGetBookInstanceQueryset:
 
 
 class TestBookInstanceViewSet:
-
     def test_list_anonymous_returns_401(self, api_client):
         AvailableBookInstanceFactory.create_batch(2)
         OnLoanBookInstanceFactory()
