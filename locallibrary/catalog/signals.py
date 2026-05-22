@@ -29,7 +29,7 @@ def cleanup_old_image_on_update(sender: type[models.Model], instance: models.Mod
 @receiver([post_delete, post_save], sender="catalog.Author")
 @receiver([post_delete, post_save], sender="catalog.Book")
 @receiver([post_delete, post_save], sender="catalog.BookInstance")
-@receiver([post_delete, post_save], sender="catalog.loan")
+@receiver([post_delete, post_save], sender="catalog.Loan")
 def invalidate_cache(sender: type[models.Model], instance: models.Model, **kwargs: Any) -> None:
     model_name = sender._meta.model_name
 

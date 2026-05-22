@@ -2,13 +2,11 @@ import pytest
 from datetime import date, timedelta
 from unittest.mock import patch
 from django.urls import reverse
-from django.contrib.auth.models import Permission
 from rest_framework import status
 
 from catalog.choices import InstanceStatus
 from catalog.tests.helper.factories import (
     UserFactory,
-    LibrarianUserFactory,
     AvailableBookInstanceFactory,
     OnLoanBookInstanceFactory,
     ReservedBookInstanceFactory,
@@ -17,23 +15,8 @@ from catalog.tests.helper.factories import (
 
 pytestmark = pytest.mark.django_db
 
-def _staff_user():
-    user = LibrarianUserFactory()
-    perms = Permission.objects.filter(
-        codename__in=[
-            "view_bookinstance", "add_bookinstance", "change_bookinstance", "delete_bookinstance",
-            "view_book", "add_book", "change_book", "delete_book",
-            "view_author", "add_author", "change_author", "delete_author",
-            "view_genre", "add_genre", "change_genre", "delete_genre",
-            "view_language", "add_language", "change_language", "delete_language",
-            "view_loan",
-            "can_mark_returned", "can_change_due_back", "can_change_status",
-        ]
-    )
-    user.user_permissions.set(perms)
-    return user.__class__.objects.get(pk=user.pk)
 
-class TestBookActionBorrowOrReserve:
+class TestBookActionBorrowOrReserveIntegration:
 
     def test_anonymous_forbidden(self, api_client):
         instance = AvailableBookInstanceFactory()
@@ -76,6 +59,8 @@ class TestBookActionBorrowOrReserve:
         instance.refresh_from_db()
         assert instance.status == InstanceStatus.RESERVED
 
+class TestBookActionBorrowOrReserveUnit:
+
     def test_invalid_serializer_returns_400(self, api_client):
         user = UserFactory()
         api_client.force_authenticate(user=user)
@@ -104,7 +89,7 @@ class TestBookActionBorrowOrReserve:
         assert "Book is not available" in response.data["detail"]
 
 
-class TestBookActionBorrowReserved:
+class TestBookActionBorrowReservedIntegration:
 
     def test_anonymous_forbidden(self, api_client):
         instance = ReservedBookInstanceFactory()
@@ -126,6 +111,8 @@ class TestBookActionBorrowReserved:
         assert response.status_code == status.HTTP_200_OK
         instance.refresh_from_db()
         assert instance.status == InstanceStatus.ON_LOAN
+
+class TestBookActionBorrowReservedUnit:
 
     def test_invalid_serializer_returns_400(self, api_client):
         user = UserFactory()
@@ -152,7 +139,7 @@ class TestBookActionBorrowReserved:
         assert "reserved" in response.data["detail"].lower()
 
 
-class TestBookActionReturnBook:
+class TestBookActionReturnBookIntegration:
 
     def test_anonymous_forbidden(self, api_client):
         instance = OnLoanBookInstanceFactory()
@@ -170,9 +157,8 @@ class TestBookActionReturnBook:
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_return_book_success(self, api_client):
-        user = _staff_user()
-        api_client.force_authenticate(user=user)
+    def test_return_book_success(self, api_client, staff_user):
+        api_client.force_authenticate(user=staff_user)
         instance = OnLoanBookInstanceFactory()
         LoanFactory(book_instance=instance, borrower=instance.borrower)
         response = api_client.post(
@@ -182,11 +168,12 @@ class TestBookActionReturnBook:
         instance.refresh_from_db()
         assert instance.status == InstanceStatus.AVAILABLE
 
+class TestBookActionReturnBookUnit:
+
     @patch("catalog.api.views.return_book")
-    def test_service_raises_value_error_returns_400(self, mock_service, api_client):
+    def test_service_raises_value_error_returns_400(self, mock_service, api_client, staff_user):
         mock_service.side_effect = ValueError("Bad status")
-        user = _staff_user()
-        api_client.force_authenticate(user=user)
+        api_client.force_authenticate(user=staff_user)
         instance = AvailableBookInstanceFactory()
         response = api_client.post(
             reverse("api-instance-action-return-book", args=[instance.pk]),
@@ -195,7 +182,7 @@ class TestBookActionReturnBook:
         assert "Bad status" in response.data["detail"]
 
 
-class TestBookActionExtendLoan:
+class TestBookActionExtendLoanIntegration:
 
     def test_anonymous_forbidden(self, api_client):
         instance = OnLoanBookInstanceFactory()
@@ -215,19 +202,8 @@ class TestBookActionExtendLoan:
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_extend_loan_success(self, api_client):
-        from django.contrib.auth.models import Permission
-        from django.contrib.contenttypes.models import ContentType
-        from catalog.models import BookInstance
-        ct = ContentType.objects.get_for_model(BookInstance)
-        perm, _ = Permission.objects.get_or_create(
-            codename="can_change_due_back", content_type=ct,
-            defaults={"name": "Set due back date"}
-        )
-        user = LibrarianUserFactory()
-        user.user_permissions.add(perm)
-        user = user.__class__.objects.get(pk=user.pk)
-        api_client.force_authenticate(user=user)
+    def test_extend_loan_success(self, api_client, staff_user):
+        api_client.force_authenticate(user=staff_user)
         new_due = date.today() + timedelta(days=14)
         instance = OnLoanBookInstanceFactory()
         response = api_client.patch(
@@ -238,19 +214,10 @@ class TestBookActionExtendLoan:
         instance.refresh_from_db()
         assert instance.due_back == new_due
 
-    def test_invalid_serializer_returns_400(self, api_client):
-        from django.contrib.auth.models import Permission
-        from django.contrib.contenttypes.models import ContentType
-        from catalog.models import BookInstance
-        ct = ContentType.objects.get_for_model(BookInstance)
-        perm, _ = Permission.objects.get_or_create(
-            codename="can_change_due_back", content_type=ct,
-            defaults={"name": "Set due back date"}
-        )
-        user = LibrarianUserFactory()
-        user.user_permissions.add(perm)
-        user = user.__class__.objects.get(pk=user.pk)
-        api_client.force_authenticate(user=user)
+class TestBookActionExtendLoanUnit:
+
+    def test_invalid_serializer_returns_400(self, api_client, staff_user):
+        api_client.force_authenticate(user=staff_user)
         instance = OnLoanBookInstanceFactory()
         response = api_client.patch(
             reverse("api-instance-action-extend-loan", args=[instance.pk]),
@@ -259,20 +226,9 @@ class TestBookActionExtendLoan:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @patch("catalog.api.views.renew_book")
-    def test_service_raises_value_error_returns_400(self, mock_service, api_client):
-        from django.contrib.auth.models import Permission
-        from django.contrib.contenttypes.models import ContentType
-        from catalog.models import BookInstance
+    def test_service_raises_value_error_returns_400(self, mock_service, api_client, staff_user):
         mock_service.side_effect = ValueError("Bad status for renew")
-        ct = ContentType.objects.get_for_model(BookInstance)
-        perm, _ = Permission.objects.get_or_create(
-            codename="can_change_due_back", content_type=ct,
-            defaults={"name": "Set due back date"}
-        )
-        user = LibrarianUserFactory()
-        user.user_permissions.add(perm)
-        user = user.__class__.objects.get(pk=user.pk)
-        api_client.force_authenticate(user=user)
+        api_client.force_authenticate(user=staff_user)
         instance = OnLoanBookInstanceFactory()
         response = api_client.patch(
             reverse("api-instance-action-extend-loan", args=[instance.pk]),

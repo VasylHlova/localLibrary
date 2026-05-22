@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from catalog.tasks.periodic_tasks import (
     check_expiring_loans, 
-    update_status_on_exipiring_reservation_date
+    update_status_on_expiring_reservation_date
 )
 from catalog.tests.helper.factories import (
     OnLoanBookInstanceFactory, 
@@ -44,7 +44,7 @@ class PeriodicTasksTest(TestCase):
             borrower=user 
         )
 
-        update_status_on_exipiring_reservation_date()
+        update_status_on_expiring_reservation_date()
 
         expired.refresh_from_db()
         active.refresh_from_db()

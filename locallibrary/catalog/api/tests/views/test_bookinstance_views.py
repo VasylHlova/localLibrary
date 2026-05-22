@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import patch
 from django.urls import reverse
-from django.contrib.auth.models import Permission
 from rest_framework import status
 
 from catalog.choices import InstanceStatus
@@ -9,7 +8,6 @@ from catalog.models import BookInstance
 from catalog.tests.helper.factories import (
     BookFactory,
     UserFactory,
-    LibrarianUserFactory,
     AvailableBookInstanceFactory,
     OnLoanBookInstanceFactory,
     MaintenanceBookInstanceFactory,
@@ -17,21 +15,6 @@ from catalog.tests.helper.factories import (
 
 pytestmark = pytest.mark.django_db
 
-def _staff_user():
-    user = LibrarianUserFactory()
-    perms = Permission.objects.filter(
-        codename__in=[
-            "view_bookinstance", "add_bookinstance", "change_bookinstance", "delete_bookinstance",
-            "view_book", "add_book", "change_book", "delete_book",
-            "view_author", "add_author", "change_author", "delete_author",
-            "view_genre", "add_genre", "change_genre", "delete_genre",
-            "view_language", "add_language", "change_language", "delete_language",
-            "view_loan",
-            "can_mark_returned", "can_change_due_back", "can_change_status",
-        ]
-    )
-    user.user_permissions.set(perms)
-    return user.__class__.objects.get(pk=user.pk)
 
 class TestGetBookInstanceQueryset:
 
@@ -42,9 +25,8 @@ class TestGetBookInstanceQueryset:
         response = api_client.get(reverse("api-instance-list"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_user_with_view_perm_sees_all(self, api_client):
-        user = _staff_user()
-        api_client.force_authenticate(user=user)
+    def test_user_with_view_perm_sees_all(self, api_client, staff_user):
+        api_client.force_authenticate(user=staff_user)
         AvailableBookInstanceFactory()
         OnLoanBookInstanceFactory()
         MaintenanceBookInstanceFactory()
@@ -73,9 +55,8 @@ class TestBookInstanceViewSet:
         response = api_client.get(reverse("api-instance-list"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_list_with_view_perm_returns_200(self, api_client):
-        user = _staff_user()
-        api_client.force_authenticate(user=user)
+    def test_list_with_view_perm_returns_200(self, api_client, staff_user):
+        api_client.force_authenticate(user=staff_user)
         AvailableBookInstanceFactory.create_batch(2)
         OnLoanBookInstanceFactory()
         response = api_client.get(reverse("api-instance-list"))
@@ -86,9 +67,8 @@ class TestBookInstanceViewSet:
         response = api_client.get(reverse("api-instance-detail", args=[instance.pk]))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_retrieve_own_on_loan_instance(self, api_client):
-        user = _staff_user()
-        api_client.force_authenticate(user=user)
+    def test_retrieve_own_on_loan_instance(self, api_client, staff_user):
+        api_client.force_authenticate(user=staff_user)
         instance = OnLoanBookInstanceFactory()
         response = api_client.get(reverse("api-instance-detail", args=[instance.pk]))
         assert response.status_code == status.HTTP_200_OK
@@ -99,9 +79,8 @@ class TestBookInstanceViewSet:
         response = api_client.post(reverse("api-instance-list"), {})
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_create_staff(self, api_client):
-        user = _staff_user()
-        api_client.force_authenticate(user=user)
+    def test_create_staff(self, api_client, staff_user):
+        api_client.force_authenticate(user=staff_user)
         book = BookFactory()
         payload = {
             "book": book.pk,
@@ -121,9 +100,8 @@ class TestBookInstanceViewSet:
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_partial_update_with_can_change_status(self, api_client):
-        user = _staff_user()
-        api_client.force_authenticate(user=user)
+    def test_partial_update_with_can_change_status(self, api_client, staff_user):
+        api_client.force_authenticate(user=staff_user)
         instance = OnLoanBookInstanceFactory()
         response = api_client.patch(
             reverse("api-instance-detail", args=[instance.pk]),

@@ -17,8 +17,8 @@ from catalog.tests.helper.factories import BookInstanceFactory, BookFactory, Use
 pytestmark = pytest.mark.django_db
 
 def test_book_instance_list_serialization():
-    borrower = UserFactory(first_name="John", last_name="Doe")
-    book = BookFactory(title="Kateryna")
+    borrower = UserFactory()
+    book = BookFactory()
     instance = BookInstanceFactory(status=InstanceStatus.ON_LOAN, borrower=borrower, book=book, due_back=date.today())
     serializer = BookInstanceListSerializer(instance=instance)
     assert serializer.data["borrower"] == str(borrower)
@@ -26,16 +26,16 @@ def test_book_instance_list_serialization():
     assert serializer.data["status"] == InstanceStatus.ON_LOAN
 
 def test_book_instance_detail_serialization():
-    borrower = UserFactory(first_name="John", last_name="Doe")
-    book = BookFactory(title="Kateryna")
+    borrower = UserFactory()
+    book = BookFactory()
     instance = BookInstanceFactory(status=InstanceStatus.ON_LOAN, borrower=borrower, book=book, due_back=date.today())
     
     factory = APIRequestFactory()
     request = factory.get("/api/catalog/instances/")
     serializer = BookInstanceDetailSerializer(instance=instance, context={"request": request})
-    assert serializer.data["book"]["title"] == "Kateryna"
-    assert serializer.data["borrower"]["first_name"] == "John"
-    assert serializer.data["borrower"]["last_name"] == "Doe"
+    assert serializer.data["book"]["title"] == book.title
+    assert serializer.data["borrower"]["first_name"] == borrower.first_name
+    assert serializer.data["borrower"]["last_name"] == borrower.last_name
 
 def test_book_instance_create_validation_success():
     book = BookFactory()

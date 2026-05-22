@@ -89,9 +89,6 @@ class Book(ImageProcessingMixin, models.Model):
         ],
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._original_image = self.image.name if self.image else None
 
     def __str__(self) -> str:
         return str(self.title)
@@ -183,9 +180,6 @@ class Author(ImageProcessingMixin, models.Model):
     )
     
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._original_image = self.image.name if self.image else None
 
     class Meta:
         ordering = ["last_name", "first_name"]
@@ -224,11 +218,12 @@ class Loan(models.Model):
 
     status = models.CharField(max_length=20, choices=LoanStatus.choices, default=LoanStatus.ACTIVE)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['book_instance', 'returned_at']), 
-            models.Index(fields=['borrower', 'returned_at'])
-        ] 
+    class Meta:                                                                                                                                                                              
+        indexes = [                                                                                                                                                                          
+            models.Index(fields=['book_instance', 'returned_at']),                                                                                                                           
+            models.Index(fields=['borrower', 'returned_at']),                                                                                                                                
+            models.Index(fields=['borrower']),                                                                                                                                               
+        ]  
 
     @property
     def is_overdue(self) -> bool:
@@ -242,15 +237,6 @@ class Loan(models.Model):
             return 0
             
         return (end_date - self.book_instance.due_back).days
-
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=[
-                    "borrower",
-                ]
-            )
-        ]
 
     def __str__(self):
         return f'{self.borrower.first_name} {self.borrower.last_name}, loan status: {self.status}'

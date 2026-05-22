@@ -27,7 +27,6 @@ from catalog.api.permissions import (
     CanChangeDueBack,
     CanChangeStatus,
     CanMarkReturned,
-    CanChangeStatus
 )
 from catalog.api.filters import (
     BookFilter, 
@@ -250,7 +249,7 @@ class BookActionViewSet(GenericViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[CanChangeDueBack])
     def extend_loan(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()
-        serializer = RenewDueBackSerializer(data=request.data)
+        serializer = RenewDueBackSerializer(instance, data=request.data)
         
         if serializer.is_valid():
             try:
@@ -261,7 +260,7 @@ class BookActionViewSet(GenericViewSet):
             except ValueError as e:
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response(
-                BookInstanceDetailSerializer(instance, context={'request': request}).data, 
+                BookInstanceDetailSerializer(instance, context={'request': request}).data,
                 status=status.HTTP_200_OK
             )
                     

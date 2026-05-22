@@ -12,12 +12,12 @@ User = get_user_model()
 
 @receiver(pre_save, sender=User)
 def cleanup_profile_picture_on_delete(sender: type[CustomUser], instance: CustomUser, **kwargs: Any) -> None:
-    if not instance.pk:
+    if not instance.pk or instance.is_active:
         return
 
     old_instance = sender.objects.get(pk=instance.pk)
 
-    if old_instance.is_active and not instance.is_active:
+    if old_instance.is_active:
         profile = getattr(instance, 'profile', None)
         if profile and profile.profile_picture:
             cleanup_storage_file.delay(file_path=profile.profile_picture.name)

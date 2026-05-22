@@ -1,4 +1,4 @@
-from celery import shared_task
+from celery import shared_task, Task
 from django.core.files.storage import default_storage
 from botocore.exceptions import (
     EndpointConnectionError,
@@ -9,7 +9,7 @@ from botocore.exceptions import (
 @shared_task(name='common.cleanup_storage_file', bind=True,
              autoretry_for=(EndpointConnectionError, ConnectTimeoutError, ReadTimeoutError),
              retry_kwargs={'max_retries': 3}, retry_backoff=True, retry_jitter=True)
-def cleanup_storage_file(self, file_path: str):
+def cleanup_storage_file(self: Task, file_path: str) -> str:
     if file_path and default_storage.exists(file_path):
         default_storage.delete(file_path)
         return f"File {file_path} successfully deleted."

@@ -54,9 +54,30 @@ def anon_client():
     return APIClient()
 
 
+@pytest.fixture(scope="session")
+def setup_permissions(django_db_setup, django_db_blocker):
+    with django_db_blocker.unblock():
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+        from catalog.models import BookInstance
+
+        # Ensure custom permissions exist in test database
+        ct = ContentType.objects.get_for_model(BookInstance)
+        for codename, name in [
+            ("can_mark_returned", "Set book as returned"),
+            ("can_change_due_back", "Set due back date"),
+            ("can_change_status", "Can change book status"),
+        ]:
+            Permission.objects.get_or_create(
+                codename=codename,
+                content_type=ct,
+                defaults={"name": name}
+            )
+
 @pytest.fixture
-def staff_client(api_client):
+def staff_user(db, setup_permissions):
     from django.contrib.auth.models import Permission
+
     librarian = LibrarianUserFactory()
     perms = Permission.objects.filter(
         codename__in=[
@@ -70,5 +91,10 @@ def staff_client(api_client):
         ]
     )
     librarian.user_permissions.set(perms)
-    api_client.force_authenticate(user=librarian)
-    return api_client, librarian
+    return librarian.__class__.objects.get(pk=librarian.pk)
+
+
+@pytest.fixture
+def staff_client(api_client, staff_user):
+    api_client.force_authenticate(user=staff_user)
+    return api_client, staff_user

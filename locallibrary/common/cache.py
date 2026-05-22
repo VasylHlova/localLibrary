@@ -1,6 +1,7 @@
 from typing import Any
 import hashlib
 from urllib.parse import urlencode
+from django.db.models import Model
 
 from rest_framework.response import Response
 from django.core.cache import cache
@@ -25,7 +26,7 @@ class VersionedCacheListMixin:
     cache_timeout = 60 * 60
     cache_key_prefix = None
 
-    def _get_model(self):
+    def _get_model(self) -> Model:
         model = getattr(self, "model", None)
         if model:
             return model
@@ -36,8 +37,7 @@ class VersionedCacheListMixin:
 
         return self.get_queryset().model
 
-    def get_cache_prefix(self) -> str:
-        model = self._get_model()
+    def get_cache_prefix(self, model: Model) -> str:
         model_name = model._meta.model_name
         return self.cache_key_prefix or f"{model_name}_list"
 
@@ -45,8 +45,8 @@ class VersionedCacheListMixin:
         page_kwarg = self.page_kwarg
         page_number = self.kwargs.get(page_kwarg) or self.request.GET.get(page_kwarg) or 1
 
-        prefix = self.get_cache_prefix()
         model = self._get_model()
+        prefix = self.get_cache_prefix(model=model)
         model_name = model._meta.model_name
         version = get_model_cache_version(model_name)
 
@@ -77,7 +77,8 @@ class DRFVersionedCacheListMixin:
         model_name = self.get_queryset().model._meta.model_name
         version = get_model_cache_version(model_name)
         params_hash = hashlib.md5(
-            urlencode(sorted(request.query_params.dict().items())).encode()
+            urlencode(sorted(request.query_params.dict().items())).encode(),
+            usedforsecurity=False
         ).hexdigest()
         cache_key = self._build_cache_key(request, model_name, version, params_hash)
 

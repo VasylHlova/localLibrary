@@ -22,11 +22,11 @@ def test_book_filter_by_title():
     assert b2 not in f.qs
 
 def test_book_filter_by_author_full_name():
-    a1 = AuthorFactory(first_name="Taras", last_name="Shevchenko")
-    a2 = AuthorFactory(first_name="Lesya", last_name="Ukrainka")
+    a1 = AuthorFactory(first_name="John", last_name="Doe")
+    a2 = AuthorFactory(first_name="Jane", last_name="Smith")
     b1 = BookFactory(author=a1)
     b2 = BookFactory(author=a2)
-    f = BookFilter(data={"author_name": "shevchenko"}, queryset=Book.objects.all())
+    f = BookFilter(data={"author_name": "doe"}, queryset=Book.objects.all())
     assert b1 in f.qs
     assert b2 not in f.qs
 
@@ -40,7 +40,8 @@ def test_loan_filter_by_issued_at():
     f = LoanFilter(data={"issued_at": str(date.today())}, queryset=Loan.objects.all())
     assert loan in f.qs
 
-def test_loan_filter_is_overdue_true():
+@pytest.fixture
+def overdue_test_data():
     user = UserFactory()
     inst_active_overdue = BookInstanceFactory(status=InstanceStatus.ON_LOAN, borrower=user, due_back=date.today() - timedelta(days=2))
     loan_active_overdue = LoanFactory(book_instance=inst_active_overdue, borrower=user, returned_at=None)
@@ -50,48 +51,45 @@ def test_loan_filter_is_overdue_true():
     loan_returned_overdue = LoanFactory(book_instance=inst_returned_overdue, borrower=user, returned_at=date.today() - timedelta(days=2))
     inst_returned_ok = BookInstanceFactory(status=InstanceStatus.AVAILABLE, borrower=None, due_back=date.today() - timedelta(days=2))
     loan_returned_ok = LoanFactory(book_instance=inst_returned_ok, borrower=user, returned_at=date.today() - timedelta(days=5))
+    return {
+        "loan_active_overdue": loan_active_overdue,
+        "loan_active_ok": loan_active_ok,
+        "loan_returned_overdue": loan_returned_overdue,
+        "loan_returned_ok": loan_returned_ok,
+    }
 
+def test_loan_filter_is_overdue_true(overdue_test_data):
     f = LoanFilter(data={"is_overdue": True}, queryset=Loan.objects.all())
-    assert loan_active_overdue in f.qs
-    assert loan_returned_overdue in f.qs
-    assert loan_active_ok not in f.qs
-    assert loan_returned_ok not in f.qs
+    assert overdue_test_data["loan_active_overdue"] in f.qs
+    assert overdue_test_data["loan_returned_overdue"] in f.qs
+    assert overdue_test_data["loan_active_ok"] not in f.qs
+    assert overdue_test_data["loan_returned_ok"] not in f.qs
 
-def test_loan_filter_is_overdue_false():
-    user = UserFactory()
-    inst_active_overdue = BookInstanceFactory(status=InstanceStatus.ON_LOAN, borrower=user, due_back=date.today() - timedelta(days=2))
-    loan_active_overdue = LoanFactory(book_instance=inst_active_overdue, borrower=user, returned_at=None)
-    inst_active_ok = BookInstanceFactory(status=InstanceStatus.ON_LOAN, borrower=user, due_back=date.today() + timedelta(days=2))
-    loan_active_ok = LoanFactory(book_instance=inst_active_ok, borrower=user, returned_at=None)
-    inst_returned_overdue = BookInstanceFactory(status=InstanceStatus.AVAILABLE, borrower=None, due_back=date.today() - timedelta(days=5))
-    loan_returned_overdue = LoanFactory(book_instance=inst_returned_overdue, borrower=user, returned_at=date.today() - timedelta(days=2))
-    inst_returned_ok = BookInstanceFactory(status=InstanceStatus.AVAILABLE, borrower=None, due_back=date.today() - timedelta(days=2))
-    loan_returned_ok = LoanFactory(book_instance=inst_returned_ok, borrower=user, returned_at=date.today() - timedelta(days=5))
-
+def test_loan_filter_is_overdue_false(overdue_test_data):
     f = LoanFilter(data={"is_overdue": False}, queryset=Loan.objects.all())
-    assert loan_active_ok in f.qs
-    assert loan_returned_ok in f.qs
-    assert loan_active_overdue not in f.qs
-    assert loan_returned_overdue not in f.qs
+    assert overdue_test_data["loan_active_ok"] in f.qs
+    assert overdue_test_data["loan_returned_ok"] in f.qs
+    assert overdue_test_data["loan_active_overdue"] not in f.qs
+    assert overdue_test_data["loan_returned_overdue"] not in f.qs
 
 def test_author_filter_by_first_name():
-    a1 = AuthorFactory(first_name="Taras", last_name="Shevchenko")
-    a2 = AuthorFactory(first_name="Lesya", last_name="Ukrainka")
-    f = AuthorFilter(data={"first_name": "ara"}, queryset=Author.objects.all())
+    a1 = AuthorFactory(first_name="John", last_name="Doe")
+    a2 = AuthorFactory(first_name="Jane", last_name="Smith")
+    f = AuthorFilter(data={"first_name": "oh"}, queryset=Author.objects.all())
     assert a1 in f.qs
     assert a2 not in f.qs
 
 def test_author_filter_by_last_name():
-    a1 = AuthorFactory(first_name="Taras", last_name="Shevchenko")
-    a2 = AuthorFactory(first_name="Lesya", last_name="Ukrainka")
-    f = AuthorFilter(data={"last_name": "rain"}, queryset=Author.objects.all())
+    a1 = AuthorFactory(first_name="John", last_name="Doe")
+    a2 = AuthorFactory(first_name="Jane", last_name="Smith")
+    f = AuthorFilter(data={"last_name": "mit"}, queryset=Author.objects.all())
     assert a2 in f.qs
     assert a1 not in f.qs
 
 def test_author_filter_by_full_name():
-    a1 = AuthorFactory(first_name="Taras", last_name="Shevchenko")
-    a2 = AuthorFactory(first_name="Lesya", last_name="Ukrainka")
-    f = AuthorFilter(data={"name": "ras shev"}, queryset=Author.objects.all())
+    a1 = AuthorFactory(first_name="John", last_name="Doe")
+    a2 = AuthorFactory(first_name="Jane", last_name="Smith")
+    f = AuthorFilter(data={"name": "ohn do"}, queryset=Author.objects.all())
     assert a1 in f.qs
     assert a2 not in f.qs
 

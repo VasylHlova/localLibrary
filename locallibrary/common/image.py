@@ -15,15 +15,23 @@ logger = logging.getLogger(__name__)
 class ImageProcessingMixin:
     IMAGE_FIELD = "image"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        image_field = getattr(self, self.IMAGE_FIELD, None)
+        self._original_image = image_field.name if image_field else None
+
     def save(self, *args, **kwargs):
-        field_name = getattr(self, "IMAGE_FIELD", "image")
+        field_name = self.IMAGE_FIELD
         image_field = getattr(self, field_name, None)
         if image_field:
             size = getattr(self, "IMAGE_SIZE", (800, 800))
-            processed = processing_image(image_field, max_size=size)
+            processed = process_image(image_field, max_size=size)
             if processed:
                 image_field.save(image_field.name, processed, save=False)
         super().save(*args, **kwargs)
+        image_field = getattr(self, field_name, None)
+        self._original_image = image_field.name if image_field else None
+
 
 
 @deconstructible
@@ -40,7 +48,7 @@ class GeneratePath:
         return os.path.join(self.path, new_filename)
 
 
-def processing_image(image: File, max_size: tuple[int, int] = (800, 800)) -> File | None:
+def process_image(image: File, max_size: tuple[int, int] = (800, 800)) -> File | None:
     if not image:
         return None
 
