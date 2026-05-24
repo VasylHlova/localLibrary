@@ -246,7 +246,9 @@ class RenewBookLibrarianViewTest(PermissionViewTestMixin, TestCase):
             {"due_back": valid_date},
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFormError(response.context["form"], None, "This book has bad status (a) for this action!")
+        self.assertFormError(
+            response.context["form"], None, "This book has bad status (a) for this action!"
+        )
 
 
 class BorrowReservedBookViewTest(TestCase):
@@ -327,7 +329,9 @@ class BorrowReservedBookViewTest(TestCase):
             {"due_back": valid_date},
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFormError(response.context["form"], None, "This book has bad status (a) for this action!")
+        self.assertFormError(
+            response.context["form"], None, "This book has bad status (a) for this action!"
+        )
 
 
 class BorrowOrReserveBookViewTest(TestCase):

@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ImageProcessingMixin:
     IMAGE_FIELD = "image"
+    _original_image: str | None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -51,7 +52,7 @@ def process_image(image: File, max_size: tuple[int, int] = (800, 800)) -> File |
         return None
 
     try:
-        img = Image.open(image)
+        img: Image.Image = Image.open(image)
         img = ImageOps.exif_transpose(img)
 
         if img.mode in ("RGBA", "P"):

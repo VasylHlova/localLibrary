@@ -283,7 +283,7 @@ class LoanModelTest(TestCase):
 
     def test_str_returns_borrower_full_name_and_loan_status(self):
         expected = (
-            f"{self.loan.borrower.first_name} " 
+            f"{self.loan.borrower.first_name} "
             f"{self.loan.borrower.last_name}, "
             f"loan status: {self.loan.status}"
         )

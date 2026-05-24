@@ -35,6 +35,7 @@ class UserDetailViewTest(TestCase):
 
     def test_context_is_owner_is_false_for_other_profile(self):
         from django.contrib.auth.models import Permission
+
         permission = Permission.objects.get(codename="view_customuser")
         self.other_user.user_permissions.add(permission)
         self.client.force_login(self.other_user)

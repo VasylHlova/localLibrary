@@ -31,6 +31,9 @@ def send_return_reminder_email(self, book_instance_id: str):
     if not book_instance.borrower or not book_instance.borrower.email:
         return f"No borrower or email for instance {book_instance_id}."
 
+    if not book_instance.due_back:
+        return f"Book {book_instance_id} has no due back date. Email aborted."
+
     today = timezone.now().date()
     days_left = (book_instance.due_back - today).days
 

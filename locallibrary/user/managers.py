@@ -10,7 +10,11 @@ class CustomUserManager(BaseUserManager):
             raise ValueError(_("Email must be set"))
 
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        from typing import cast
+
+        from django.contrib.auth.models import AbstractBaseUser
+
+        user = cast(AbstractBaseUser, self.model(email=email, **extra_fields))
         user.set_password(password)
         user.save(using=self._db)
         return user

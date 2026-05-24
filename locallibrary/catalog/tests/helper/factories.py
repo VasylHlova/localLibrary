@@ -1,6 +1,7 @@
 import io
 import uuid
 from datetime import date, timedelta
+from typing import Any
 
 import factory
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -37,7 +38,7 @@ class UserFactory(DjangoModelFactory):
     class Meta:
         model = "user.CustomUser"
 
-    email = factory.Sequence(lambda n: f"user{n}@gmail.com")
+    email: factory.Sequence = factory.Sequence(lambda n: f"user{n}@gmail.com")
     first_name = "John"
     last_name = "Doe"
 
@@ -75,14 +76,14 @@ class GenreFactory(DjangoModelFactory):
     class Meta:
         model = Genre
 
-    name = factory.Sequence(lambda n: f"Genre {n}")
+    name: factory.Sequence = factory.Sequence(lambda n: f"Genre {n}")
 
 
 class LanguageFactory(DjangoModelFactory):
     class Meta:
         model = Language
 
-    name = factory.Sequence(lambda n: f"Language {n}")
+    name: factory.Sequence = factory.Sequence(lambda n: f"Language {n}")
 
 
 class BookFactory(DjangoModelFactory):
@@ -90,11 +91,11 @@ class BookFactory(DjangoModelFactory):
         model = Book
         skip_postgeneration_save = True
 
-    title = factory.Sequence(lambda n: f"Book {n}")
-    author = factory.SubFactory(AuthorFactory)
+    title: factory.Sequence = factory.Sequence(lambda n: f"Book {n}")
+    author: factory.SubFactory = factory.SubFactory(AuthorFactory)
     summary = "Test summary"
-    isbn = factory.Sequence(lambda n: str(n).zfill(13))
-    language = factory.SubFactory(LanguageFactory)
+    isbn: factory.Sequence = factory.Sequence(lambda n: str(n).zfill(13))
+    language: factory.SubFactory = factory.SubFactory(LanguageFactory)
 
     @factory.post_generation
     def genre(self, create, extracted, **kwargs):
@@ -111,12 +112,12 @@ class BookInstanceFactory(DjangoModelFactory):
     class Meta:
         model = BookInstance
 
-    id = factory.LazyFunction(uuid.uuid4)
-    book = factory.SubFactory(BookFactory)
+    id: factory.LazyFunction = factory.LazyFunction(uuid.uuid4)
+    book: factory.SubFactory = factory.SubFactory(BookFactory)
     imprint = "Test imprint"
     status = InstanceStatus.AVAILABLE
-    due_back = None
-    borrower = None
+    due_back: Any = None
+    borrower: Any = None
 
 
 class AvailableBookInstanceFactory(BookInstanceFactory):
@@ -125,20 +126,20 @@ class AvailableBookInstanceFactory(BookInstanceFactory):
 
 class ReservedBookInstanceFactory(BookInstanceFactory):
     status = InstanceStatus.RESERVED
-    due_back = factory.LazyFunction(lambda: date.today() + timedelta(weeks=1))
-    borrower = factory.SubFactory(UserFactory)
+    due_back: factory.LazyFunction = factory.LazyFunction(lambda: date.today() + timedelta(weeks=1))
+    borrower: factory.SubFactory = factory.SubFactory(UserFactory)
 
 
 class OnLoanBookInstanceFactory(BookInstanceFactory):
     status = InstanceStatus.ON_LOAN
-    due_back = factory.LazyFunction(lambda: date.today() + timedelta(weeks=2))
-    borrower = factory.SubFactory(UserFactory)
+    due_back: factory.LazyFunction = factory.LazyFunction(lambda: date.today() + timedelta(weeks=2))
+    borrower: factory.SubFactory = factory.SubFactory(UserFactory)
 
 
 class OverdueBookInstanceFactory(BookInstanceFactory):
     status = InstanceStatus.ON_LOAN
-    due_back = factory.LazyFunction(lambda: date.today() - timedelta(weeks=1))
-    borrower = factory.SubFactory(UserFactory)
+    due_back: factory.LazyFunction = factory.LazyFunction(lambda: date.today() - timedelta(weeks=1))
+    borrower: factory.SubFactory = factory.SubFactory(UserFactory)
 
 
 class MaintenanceBookInstanceFactory(BookInstanceFactory):
@@ -149,6 +150,6 @@ class LoanFactory(DjangoModelFactory):
     class Meta:
         model = Loan
 
-    borrower = factory.SelfAttribute("book_instance.borrower")
-    book_instance = factory.SubFactory(OnLoanBookInstanceFactory)
+    borrower: factory.SelfAttribute = factory.SelfAttribute("book_instance.borrower")
+    book_instance: factory.SubFactory = factory.SubFactory(OnLoanBookInstanceFactory)
     status = LoanStatus.ACTIVE

@@ -34,7 +34,7 @@ class UpdateUserProfileForm(forms.ModelForm):
             self.fields["first_name"].initial = self.instance.user.first_name
             self.fields["last_name"].initial = self.instance.user.last_name
 
-    def clean_date_of_birth(self) -> date:
+    def clean_date_of_birth(self) -> date | None:
         data = self.cleaned_data.get("date_of_birth")
         if data:
             validate_user_age(data)

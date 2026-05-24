@@ -17,7 +17,9 @@ class UserDetail(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         return self._object
 
     def test_func(self) -> bool:
-        return self.request.user.pk == self.get_object().pk or self.request.user.has_perm("user.view_customuser")
+        return self.request.user.pk == self.get_object().pk or self.request.user.has_perm(
+            "user.view_customuser"
+        )
 
     def get_queryset(self) -> QuerySet[CustomUser]:
         return super().get_queryset().select_related("profile").prefetch_related("borrowed_books__book")

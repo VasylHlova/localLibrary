@@ -35,7 +35,9 @@ def cleanup_old_profile_photo_on_update(
     old_instance = sender.objects.get(pk=instance.pk)
 
     if old_instance.profile_picture and old_instance.profile_picture != instance.profile_picture:
-        cleanup_storage_file.delay(file_path=old_instance.profile_picture.name)
+        file_path = old_instance.profile_picture.name
+        if file_path:
+            cleanup_storage_file.delay(file_path=file_path)
 
 
 @receiver(post_save, sender=User)

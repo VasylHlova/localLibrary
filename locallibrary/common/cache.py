@@ -8,13 +8,15 @@ from django.db.models import Model
 from rest_framework.response import Response
 
 
-def get_model_cache_version(model_name: str) -> int:
+def get_model_cache_version(model_name: str | None) -> int:
 
     version_key = f"{model_name}_cache_version"
-    return cache.get_or_set(version_key, 1, timeout=None)
+    from typing import cast
+
+    return cast(int, cache.get_or_set(version_key, 1, timeout=None))
 
 
-def increment_model_cache_version(model_name: str) -> None:
+def increment_model_cache_version(model_name: str | None) -> None:
     version_key = f"{model_name}_cache_version"
     try:
         cache.incr(version_key)
@@ -35,15 +37,15 @@ class VersionedCacheListMixin:
         if queryset is not None:
             return queryset.model
 
-        return self.get_queryset().model
+        return self.get_queryset().model  # type: ignore[attr-defined]
 
     def get_cache_prefix(self, model: Model) -> str:
         model_name = model._meta.model_name
         return self.cache_key_prefix or f"{model_name}_list"
 
     def paginate_queryset(self, queryset, page_size) -> tuple[Paginator, Page, list[Any], bool]:
-        page_kwarg = self.page_kwarg
-        page_number = self.kwargs.get(page_kwarg) or self.request.GET.get(page_kwarg) or 1
+        page_kwarg = self.page_kwarg  # type: ignore[attr-defined]
+        page_number = self.kwargs.get(page_kwarg) or self.request.GET.get(page_kwarg) or 1  # type: ignore[attr-defined]
 
         model = self._get_model()
         prefix = self.get_cache_prefix(model=model)
@@ -56,7 +58,7 @@ class VersionedCacheListMixin:
         if cached_data is not None:
             return cached_data
 
-        paginator, page, object_list, is_paginated = super().paginate_queryset(queryset, page_size)
+        paginator, page, object_list, is_paginated = super().paginate_queryset(queryset, page_size)  # type: ignore[misc]
 
         evaluated_object_list = list(object_list)
         page.object_list = evaluated_object_list
@@ -92,5 +94,6 @@ class DRFVersionedCacheListMixin:
 
 class DRFUserVersionedCacheListMixin(DRFVersionedCacheListMixin):
     def _build_cache_key(self, request, model_name, version, params_hash) -> str:
-        user_id = request.user.id if request.user.is_authenticated else "anonymous"
+        user = getattr(request, "user", None)
+        user_id = user.id if user and hasattr(user, "id") and user.is_authenticated else "anonymous"
         return f"api_{model_name}_list_v{version}_user_{user_id}_{params_hash}"

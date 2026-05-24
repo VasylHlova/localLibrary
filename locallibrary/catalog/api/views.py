@@ -1,6 +1,7 @@
 from common.cache import DRFUserVersionedCacheListMixin, DRFVersionedCacheListMixin
 from common.mixins import MultiPermissionMixin, MultiSerializerMixin
 from common.permissions import StrictDjangoModelPermissions
+from django.contrib.auth.models import AnonymousUser
 from django.db.models import ProtectedError, Q, QuerySet
 from rest_framework import status
 from rest_framework.decorators import action
@@ -8,6 +9,7 @@ from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly, IsA
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, ReadOnlyModelViewSet
+from user.models import CustomUser
 
 from catalog.api.filters import AuthorFilter, BookFilter, BookInstanceFilter, LoanFilter
 from catalog.api.permissions import (
@@ -38,7 +40,7 @@ from catalog.models import Author, Book, BookInstance, Genre, Language, Loan
 from catalog.services import borrow_or_reserve_book, borrow_reserved_book, renew_book, return_book
 
 
-def get_book_instance_queryset(user: "Request.user") -> "QuerySet[BookInstance]":
+def get_book_instance_queryset(user: CustomUser | AnonymousUser) -> "QuerySet[BookInstance]":
     if not user.is_authenticated:
         return BookInstance.objects.available_book_instances()
     if user.has_perm("catalog.view_bookinstance"):
@@ -148,16 +150,22 @@ class BookInstanceViewSet(
     }
 
     def get_queryset(self) -> QuerySet[BookInstance]:
+        from typing import cast
+
+        user = cast(CustomUser, self.request.user)
         return (
-            get_book_instance_queryset(self.request.user)
+            get_book_instance_queryset(user)
             .select_related("book", "borrower", "book__author")
             .order_by("due_back", "id")
         )
 
     @action(detail=False, methods=["get"])
     def my(self, request: Request) -> Response:
+        from typing import cast
+
+        user = cast(CustomUser, request.user)
         qs = (
-            BookInstance.objects.active_loans_by_user(request.user)
+            BookInstance.objects.active_loans_by_user(user)
             .select_related("book", "borrower", "book__author")
             .order_by("due_back")
         )
@@ -174,7 +182,10 @@ class BookActionViewSet(GenericViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self) -> QuerySet[BookInstance]:
-        return get_book_instance_queryset(self.request.user)
+        from typing import cast
+
+        user = cast(CustomUser, self.request.user)
+        return get_book_instance_queryset(user)
 
     @action(detail=True, methods=["post"])
     def borrow_or_reserve(self, request: Request, pk: str | None = None) -> Response:
@@ -183,9 +194,12 @@ class BookActionViewSet(GenericViewSet):
 
         if serializer.is_valid():
             try:
+                from typing import cast
+
+                user = cast(CustomUser, request.user)
                 borrow_or_reserve_book(
                     book_instance=instance,
-                    user=request.user,
+                    user=user,
                     due_back=serializer.validated_data.get("due_back"),
                     status=serializer.validated_data.get("status"),
                 )
@@ -205,9 +219,12 @@ class BookActionViewSet(GenericViewSet):
 
         if serializer.is_valid():
             try:
+                from typing import cast
+
+                user = cast(CustomUser, request.user)
                 borrow_reserved_book(
                     book_instance=instance,
-                    user=request.user,
+                    user=user,
                     due_back=serializer.validated_data.get("due_back"),
                 )
             except ValueError as e:

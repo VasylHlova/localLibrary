@@ -1,3 +1,5 @@
+from typing import Any
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -20,8 +22,9 @@ class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
     def get_status(self) -> str:
         raise NotImplementedError("Subclasses must implement get_status()")
 
-    def clean(self) -> dict:
-        cleaned_data = super().clean()
+    def clean(self) -> dict[str, Any]:
+        super().clean()
+        cleaned_data = self.cleaned_data
         due_back = cleaned_data.get("due_back")
         if due_back:
             try:
@@ -32,14 +35,15 @@ class ChangeBookInstanceDueBackBaseForm(forms.ModelForm):
 
 
 class BookInstanceStatusDueBackValidationMixin:
-    def clean_due_back(self) -> dict:
-        data = self.cleaned_data.get("due_back")
+    def clean_due_back(self) -> Any:
+        data = self.cleaned_data.get("due_back")  # type: ignore[attr-defined]
         if data:
             validate_future_date(data)
         return data
 
-    def clean(self) -> dict:
-        cleaned_data = super().clean()
+    def clean(self) -> dict[str, Any]:
+        super().clean()  # type: ignore[misc]
+        cleaned_data = self.cleaned_data  # type: ignore[attr-defined]
         status = cleaned_data.get("status")
         due_back = cleaned_data.get("due_back")
         if status and due_back:
@@ -47,7 +51,7 @@ class BookInstanceStatusDueBackValidationMixin:
                 try:
                     validate_term_limit(due_back, status=status)
                 except ValidationError as e:
-                    self.add_error("due_back", e)
+                    self.add_error("due_back", e)  # type: ignore[attr-defined]
         return cleaned_data
 
 
@@ -78,11 +82,12 @@ class ChangeBookStatusForm(BookInstanceStatusDueBackValidationMixin, forms.Model
         model = BookInstance
         fields = ["status", "due_back"]
 
-    def clean(self) -> dict:
-        cleaned_data = super().clean()
+    def clean(self) -> dict[str, Any]:
+        super().clean()
+        cleaned_data = self.cleaned_data
 
-        status_data = self.cleaned_data.get("status")
-        due_back_data = self.cleaned_data.get("due_back")
+        status_data = cleaned_data.get("status")
+        due_back_data = cleaned_data.get("due_back")
 
         if status_data == InstanceStatus.AVAILABLE:
             if due_back_data:

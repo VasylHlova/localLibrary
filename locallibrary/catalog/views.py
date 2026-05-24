@@ -1,4 +1,3 @@
-from uuid import uuid4
 
 from common.cache import VersionedCacheListMixin
 from django.contrib import messages
@@ -12,6 +11,7 @@ from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from user.models import CustomUser
 
 from catalog.forms import (
     BorrowOrReserveBookForm,
@@ -187,7 +187,9 @@ class RenewBookLibrarianView(LoginRequiredMixin, PermissionRequiredMixin, Update
 
     def form_valid(self, form: Form) -> HttpResponse:
         try:
-            renew_book(book_instance=self.object, due_back=form.cleaned_data.get("due_back"))
+            due_back = form.cleaned_data.get("due_back")
+            if due_back:
+                renew_book(book_instance=self.object, due_back=due_back)
         except ValueError as e:
             form.add_error(None, str(e))
             return self.form_invalid(form)
@@ -202,11 +204,16 @@ class BorrowReservedBookView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form: Form) -> HttpResponse:
         try:
-            borrow_reserved_book(
-                book_instance=self.object,
-                user=self.request.user,
-                due_back=form.cleaned_data.get("due_back"),
-            )
+            user = self.request.user
+            if not isinstance(user, CustomUser):
+                return redirect("login")
+            due_back = form.cleaned_data.get("due_back")
+            if due_back:
+                borrow_reserved_book(
+                    book_instance=self.object,
+                    user=user,
+                    due_back=due_back,
+                )
         except ValueError as e:
             form.add_error(None, str(e))
             return self.form_invalid(form)
@@ -222,19 +229,25 @@ class BorrowOrReserveBookView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs) -> HttpResponse:
         instance = self.get_object()
         form = BorrowOrReserveBookForm()
-        return render(request, self.template_name, {"form": form, "object": instance})
+        return render(request, self.template_name, {"form": form, "object": instance})  # type: ignore[return-value]
 
-    def post(self, request, *args, **kwargs) -> HttpResponseRedirect:
+    def post(self, request, *args, **kwargs) -> HttpResponse | HttpResponseRedirect:
         instance = self.get_object()
         form = BorrowOrReserveBookForm(request.POST)
         if form.is_valid():
             try:
-                borrow_or_reserve_book(
-                    book_instance=instance,
-                    user=request.user,
-                    due_back=form.cleaned_data.get("due_back"),
-                    status=form.cleaned_data.get("status"),
-                )
+                user = request.user
+                if not isinstance(user, CustomUser):
+                    return redirect("login")
+                due_back = form.cleaned_data.get("due_back")
+                status = form.cleaned_data.get("status")
+                if due_back and status:
+                    borrow_or_reserve_book(
+                        book_instance=instance,
+                        user=user,
+                        due_back=due_back,
+                        status=status,
+                    )
             except ValueError as e:
                 form.add_error(None, str(e))
                 return render(request, self.template_name, {"form": form, "object": instance})
@@ -255,7 +268,7 @@ class ChangeBookStatusView(PermissionRequiredMixin, UpdateView):
 @login_required
 @permission_required(perm="catalog.can_mark_returned", raise_exception=True)
 @require_POST
-def return_book_view(request, pk: uuid4) -> None:
+def return_book_view(request: HttpRequest, pk: str) -> HttpResponseRedirect:
     instance = get_object_or_404(BookInstance, pk=pk)
 
     try:

@@ -3,8 +3,8 @@ from rest_framework.viewsets import GenericViewSet
 
 
 class DummyViewSet(MultiSerializerMixin, MultiPermissionMixin, GenericViewSet):
-    queryset = []
-    serializer_class = str
+    queryset = []  # type: ignore[var-annotated, assignment]
+    serializer_class = str  # type: ignore[assignment]
     serializer_classes = {
         "create": int,
         "update": float,

@@ -6,22 +6,27 @@ from django.db import models
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
+from catalog.models import Author, Book
+
 
 @receiver(post_delete, sender="catalog.Author")
 @receiver(post_delete, sender="catalog.Book")
-def cleanup_image_on_delete(sender: type[models.Model], instance: models.Model, **kwargs: Any) -> None:
+def cleanup_image_on_delete(sender: type[models.Model], instance: Author | Book, **kwargs: Any) -> None:
     if instance.image:
-        cleanup_storage_file.delay(file_path=instance.image.name)
+        file_path = instance.image.name
+        if file_path:
+            cleanup_storage_file.delay(file_path=file_path)
 
 
 @receiver(pre_save, sender="catalog.Author")
 @receiver(pre_save, sender="catalog.Book")
-def cleanup_old_image_on_update(sender: type[models.Model], instance: models.Model, **kwargs: Any) -> None:
+def cleanup_old_image_on_update(sender: type[models.Model], instance: Author | Book, **kwargs: Any) -> None:
     if not instance.pk:
         return
 
     if getattr(instance, "_original_image", None) and instance._original_image != instance.image.name:
-        cleanup_storage_file.delay(file_path=instance._original_image)
+        if instance._original_image:
+            cleanup_storage_file.delay(file_path=instance._original_image)
 
 
 @receiver([post_delete, post_save], sender="catalog.Genre")

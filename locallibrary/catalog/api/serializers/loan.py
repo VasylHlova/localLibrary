@@ -5,11 +5,11 @@ from catalog.models import Loan
 
 
 class LoanListSerializer(serializers.ModelSerializer):
-    borrower = serializers.StringRelatedField()
-    book_instance = serializers.StringRelatedField()
+    borrower: serializers.StringRelatedField = serializers.StringRelatedField()
+    book_instance: serializers.StringRelatedField = serializers.StringRelatedField()
 
-    is_overdue = serializers.BooleanField(read_only=True)
-    overdue_days = serializers.IntegerField(read_only=True)
+    is_overdue: serializers.BooleanField = serializers.BooleanField(read_only=True)
+    overdue_days: serializers.IntegerField = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Loan
@@ -17,11 +17,13 @@ class LoanListSerializer(serializers.ModelSerializer):
 
 
 class LoanDetailSerializer(serializers.ModelSerializer):
-    borrower = UserShortSerializer(read_only=True)
-    book_instance = serializers.HyperlinkedRelatedField(view_name="api-instance-detail", read_only=True)
+    borrower: UserShortSerializer = UserShortSerializer(read_only=True)
+    book_instance: serializers.HyperlinkedRelatedField = serializers.HyperlinkedRelatedField(
+        view_name="api-instance-detail", read_only=True
+    )
 
-    is_overdue = serializers.BooleanField(read_only=True)
-    overdue_days = serializers.IntegerField(read_only=True)
+    is_overdue: serializers.BooleanField = serializers.BooleanField(read_only=True)
+    overdue_days: serializers.IntegerField = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Loan

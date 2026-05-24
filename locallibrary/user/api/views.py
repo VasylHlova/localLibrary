@@ -37,10 +37,13 @@ class UserViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def me(self, request):
+        from typing import cast
+
+        user_casted = cast(CustomUser, request.user)
         user = (
             CustomUser.objects.select_related("profile")
             .prefetch_related("borrowed_books__book")
-            .get(pk=request.user.pk)
+            .get(pk=user_casted.pk)
         )
         serializer = UserDetailSerializer(user, context={"request": request})
         return Response(serializer.data)
@@ -52,7 +55,10 @@ class UserViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def update_my_profile(self, request):
-        profile: UserProfile = request.user.profile
+        from typing import cast
+
+        user = cast(CustomUser, request.user)
+        profile: UserProfile = user.profile
         serializer = UserProfileWriteSerializer(
             profile,
             data=request.data,
@@ -70,12 +76,15 @@ class UserViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def update_my_account(self, request):
+        from typing import cast
+
+        user = cast(CustomUser, request.user)
         serializer = UserWriteSerializer(
-            request.user,
+            user,
             data=request.data,
             partial=True,
             context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(UserDetailSerializer(request.user, context={"request": request}).data)
+        return Response(UserDetailSerializer(user, context={"request": request}).data)

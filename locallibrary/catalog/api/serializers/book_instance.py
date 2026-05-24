@@ -30,7 +30,7 @@ class BookInstanceStatusDueBackValidationMixin:
 
 
 class ChangeDueBackBaseSerializer(serializers.ModelSerializer):
-    due_back = serializers.DateField(validators=[validate_future_date])
+    due_back: serializers.DateField = serializers.DateField(validators=[validate_future_date])
 
     class Meta:
         model = BookInstance
@@ -50,7 +50,9 @@ class ChangeDueBackBaseSerializer(serializers.ModelSerializer):
 
 
 class BookInstanceReadBaseSerializer(serializers.ModelSerializer):
-    is_overdue = serializers.BooleanField(read_only=True, required=False, allow_null=True)
+    is_overdue: serializers.BooleanField = serializers.BooleanField(
+        read_only=True, required=False, allow_null=True
+    )
 
     class Meta:
         model = BookInstance
@@ -58,13 +60,13 @@ class BookInstanceReadBaseSerializer(serializers.ModelSerializer):
 
 
 class BookInstanceListSerializer(BookInstanceReadBaseSerializer):
-    borrower = serializers.StringRelatedField()
-    book = serializers.StringRelatedField()
+    borrower: serializers.StringRelatedField = serializers.StringRelatedField()
+    book: serializers.StringRelatedField = serializers.StringRelatedField()
 
 
 class BookInstanceDetailSerializer(BookInstanceReadBaseSerializer):
     book = BookShortSerializer(read_only=True)
-    borrower = UserShortSerializer(read_only=True)
+    borrower: UserShortSerializer = UserShortSerializer(read_only=True)
 
 
 class BookInstanceCreateSerializer(serializers.ModelSerializer):
@@ -73,7 +75,7 @@ class BookInstanceCreateSerializer(serializers.ModelSerializer):
         (InstanceStatus.MAINTENANCE, "Maintenance"),
     )
 
-    status = serializers.ChoiceField(choices=STATUS_CHOICES)
+    status: serializers.ChoiceField = serializers.ChoiceField(choices=STATUS_CHOICES)
 
     class Meta:
         model = BookInstance
@@ -86,8 +88,8 @@ class BorrowOrReserveSerializer(BookInstanceStatusDueBackValidationMixin, serial
         (InstanceStatus.RESERVED, "Reserve"),
     )
 
-    status = serializers.ChoiceField(choices=STATUS_CHOICES)
-    due_back = serializers.DateField(
+    status: serializers.ChoiceField = serializers.ChoiceField(choices=STATUS_CHOICES)
+    due_back: serializers.DateField = serializers.DateField(
         help_text="Enter a date when you going to return the book.",
     )
 

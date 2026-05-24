@@ -10,7 +10,7 @@ from catalog.models import BookInstance, Loan
 
 @transaction.atomic
 def borrow_or_reserve_book(
-    book_instance: BookInstance, user: CustomUser, due_back: int, status: InstanceStatus
+    book_instance: BookInstance, user: CustomUser, due_back: date, status: str
 ) -> None:
 
     locked_instance = BookInstance.objects.get_locked(pk=book_instance.pk)
@@ -62,7 +62,7 @@ def _close_loan(loan: Loan, book_instance: BookInstance) -> None:
 
 
 @transaction.atomic
-def renew_book(book_instance, due_back):
+def renew_book(book_instance: BookInstance, due_back: date) -> None:
     locked_instance = BookInstance.objects.get_locked(pk=book_instance.pk)
 
     if locked_instance.status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:
@@ -74,7 +74,7 @@ def renew_book(book_instance, due_back):
 
 
 @transaction.atomic
-def borrow_reserved_book(book_instance, user, due_back) -> None:
+def borrow_reserved_book(book_instance: BookInstance, user: CustomUser, due_back: date) -> None:
     locked_instance = BookInstance.objects.get_locked(pk=book_instance.pk)
 
     if locked_instance.status != InstanceStatus.RESERVED:

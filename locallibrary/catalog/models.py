@@ -141,8 +141,7 @@ class BookInstance(models.Model):
                 ),
                 name="check_due_back_and_borrower_if_on_loan_or_reserved",
                 violation_error_message=(
-                    "Due back date and borrower cannot be empty " 
-                    "when book is on loan or reserved."
+                    "Due back date and borrower cannot be empty when book is on loan or reserved."
                 ),
             )
         ]
@@ -236,4 +235,3 @@ class Loan(models.Model):
             return 0
 
         return (end_date - self.book_instance.due_back).days
-

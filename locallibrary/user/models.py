@@ -11,7 +11,7 @@ from user.managers import CustomUserManager
 
 class CustomUser(AbstractUser):
     email = models.EmailField("email address", unique=True)
-    username = models.CharField(
+    username = models.CharField(  # type: ignore[assignment]
         "username",
         max_length=150,
         unique=True,
@@ -26,7 +26,7 @@ class CustomUser(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
-    objects = CustomUserManager()
+    objects = CustomUserManager()  # type: ignore[assignment,misc]
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name}"
