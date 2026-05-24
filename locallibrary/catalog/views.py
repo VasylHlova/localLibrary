@@ -1,4 +1,3 @@
-
 from common.cache import VersionedCacheListMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
