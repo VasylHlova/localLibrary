@@ -40,7 +40,7 @@ class Command(BaseCommand):
         for i in range(3):
             user = CustomUser.objects.create_user(
                 email=f"testuser{i}@example.com",
-                password="password123",
+                password="password123",  # nosec B106
                 first_name=fake.first_name(),
                 last_name=fake.last_name(),
             )
@@ -50,25 +50,25 @@ class Command(BaseCommand):
         for _ in range(12):
             book = Book.objects.create(
                 title=fake.catch_phrase(),
-                author=random.choice(authors),
+                author=random.choice(authors),  # nosec B311
                 summary=fake.text(max_nb_chars=500),
                 isbn=fake.isbn13().replace("-", ""),
-                language=random.choice(languages),
+                language=random.choice(languages),  # nosec B311
             )
-            book.genre.set(random.sample(genres, random.randint(1, 3)))
+            book.genre.set(random.sample(genres, random.randint(1, 3)))  # nosec B311
             books.append(book)
 
         for _ in range(35):
-            book = random.choice(books)
-            status_choice = random.choice(
+            book = random.choice(books)  # nosec B311
+            status_choice = random.choice(  # nosec B311
                 [InstanceStatus.AVAILABLE, InstanceStatus.ON_LOAN, InstanceStatus.MAINTENANCE]
             )
 
             borrower = None
             due_back = None
             if status_choice == InstanceStatus.ON_LOAN:
-                borrower = random.choice(users)
-                due_back = timezone.now().date() + timedelta(days=random.randint(1, 14))
+                borrower = random.choice(users)  # nosec B311
+                due_back = timezone.now().date() + timedelta(days=random.randint(1, 14))  # nosec B311
 
             BookInstance.objects.create(
                 book=book,

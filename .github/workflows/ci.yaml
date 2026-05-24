@@ -70,7 +70,7 @@ jobs:
         run: uv run mypy locallibrary/
 
       - name: Run Bandit Security Scan
-        run: uv run bandit -r locallibrary/
+        run: uv run bandit -c pyproject.toml -r locallibrary/
 
       - name: Check Django Migrations
         run: uv run python locallibrary/manage.py makemigrations --check --dry-run
