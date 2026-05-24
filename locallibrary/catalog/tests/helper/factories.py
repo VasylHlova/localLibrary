@@ -43,6 +43,9 @@ class UserFactory(DjangoModelFactory):
 
 
 class LibrarianUserFactory(UserFactory):
+    class Meta:
+        skip_postgeneration_save = True
+
     @factory.post_generation
     def permissions(self, create, extracted, **kwargs):
         if not create:
@@ -85,6 +88,7 @@ class LanguageFactory(DjangoModelFactory):
 class BookFactory(DjangoModelFactory):
     class Meta:
         model = Book
+        skip_postgeneration_save = True
 
     title = factory.Sequence(lambda n: f"Book {n}")
     author = factory.SubFactory(AuthorFactory)

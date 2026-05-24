@@ -15,7 +15,7 @@ from user.models import CustomUser, UserProfile
 
 
 class UserViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
-    queryset = CustomUser.objects.select_related("profile").all()
+    queryset = CustomUser.objects.select_related("profile").order_by("id")
     permission_classes = [StrictDjangoModelPermissions]
     serializer_class = UserListSerializer
 

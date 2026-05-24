@@ -55,7 +55,7 @@ class AuthorDetailViewTest(TestCase):
         cls.author = AuthorFactory()
 
     def test_view_url_exists_at_desired_location(self):
-        response = self.client.get(f"/catalog/author/{self.author.pk}")
+        response = self.client.get(f"/catalog/author/{self.author.pk}/")
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_view_url_accessible_by_name(self):

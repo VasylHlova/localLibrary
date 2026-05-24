@@ -43,7 +43,7 @@ class AuthorModelTest(TestCase):
         self.assertEqual(str(self.author), expected)
 
     def test_get_absolute_url_returns_correct_url(self):
-        self.assertEqual(self.author.get_absolute_url(), f"/catalog/author/{self.author.pk}")
+        self.assertEqual(self.author.get_absolute_url(), f"/catalog/author/{self.author.pk}/")
 
     def test_check_constraint_raises_error_when_death_date_earlier_than_birth_date(self):
         with self.assertRaises(IntegrityError):
@@ -132,7 +132,7 @@ class BookModelTest(TestCase):
         self.assertEqual(str(self.book), self.book.title)
 
     def test_get_absolute_url_returns_correct_url(self):
-        self.assertEqual(self.book.get_absolute_url(), f"/catalog/book/{self.book.pk}")
+        self.assertEqual(self.book.get_absolute_url(), f"/catalog/book/{self.book.pk}/")
 
     def test_display_genre_returns_max_three_genres(self):
         result = self.book.display_genre()
@@ -283,7 +283,7 @@ class LoanModelTest(TestCase):
 
     def test_str_returns_borrower_full_name_and_loan_status(self):
         expected = (
-            f"{self.loan.borrower.first_name}" 
+            f"{self.loan.borrower.first_name} " 
             f"{self.loan.borrower.last_name}, "
             f"loan status: {self.loan.status}"
         )

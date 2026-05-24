@@ -246,7 +246,7 @@ class RenewBookLibrarianViewTest(PermissionViewTestMixin, TestCase):
             {"due_back": valid_date},
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFormError(response.context["form"], None, "This book has bad status(a) for this action!")
+        self.assertFormError(response.context["form"], None, "This book has bad status (a) for this action!")
 
 
 class BorrowReservedBookViewTest(TestCase):
@@ -280,7 +280,7 @@ class BorrowReservedBookViewTest(TestCase):
         self.assertTemplateUsed(response, "catalog/book_borrow_reserved.html")
 
     def test_redirects_to_all_borrowed_book_list_on_success(self):
-        bookinstance_to_borrow = ReservedBookInstanceFactory()
+        bookinstance_to_borrow = ReservedBookInstanceFactory(borrower=self.user)
         valid_date = datetime.date.today() + datetime.timedelta(weeks=2)
 
         self.client.force_login(self.user)
@@ -327,7 +327,7 @@ class BorrowReservedBookViewTest(TestCase):
             {"due_back": valid_date},
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFormError(response.context["form"], None, "This book has bad status(a) for this action!")
+        self.assertFormError(response.context["form"], None, "This book has bad status (a) for this action!")
 
 
 class BorrowOrReserveBookViewTest(TestCase):

@@ -57,7 +57,7 @@ class BookDetailViewTest(TestCase):
         cls.url = reverse("book-detail", kwargs={"pk": cls.book.pk})
 
     def test_view_url_exists_at_desired_location(self):
-        response = self.client.get(f"/catalog/book/{self.book.pk}")
+        response = self.client.get(f"/catalog/book/{self.book.pk}/")
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_view_url_accessible_by_name(self):

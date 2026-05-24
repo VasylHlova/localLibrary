@@ -26,7 +26,10 @@ def test_user_short_serializer():
 
 
 def test_user_profile_serializer():
-    profile = ProfileFactory(date_of_birth=date(1990, 1, 1), role="user")
+    profile = ProfileFactory()
+    profile.role = "user"
+    profile.date_of_birth = "1990-01-01"
+    profile.save()
     serializer = UserProfileSerializer(instance=profile)
     assert serializer.data["role"] == "user"
     assert serializer.data["date_of_birth"] == "1990-01-01"

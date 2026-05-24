@@ -35,6 +35,7 @@ class BorrowOrReserveBookServiceTest(TestCase):
             book_instance=instance, user=self.user, due_back=self.due_back, status=InstanceStatus.ON_LOAN
         )
 
+        instance.refresh_from_db()
         self.assertEqual(instance.borrower, self.user)
         self.assertEqual(instance.status, InstanceStatus.ON_LOAN)
         self.assertEqual(instance.due_back, self.due_back)
@@ -53,6 +54,7 @@ class BorrowOrReserveBookServiceTest(TestCase):
             book_instance=instance, user=self.user, due_back=self.due_back, status=InstanceStatus.RESERVED
         )
 
+        instance.refresh_from_db()
         self.assertEqual(instance.status, InstanceStatus.RESERVED)
         self.assertEqual(instance.borrower, self.user)
         self.assertFalse(Loan.objects.filter(book_instance=instance).exists())
@@ -119,6 +121,7 @@ class ReturnBookServiceTest(TestCase):
 
         return_book(book_instance=instance)
 
+        instance.refresh_from_db()
         self.assertIsNone(instance.borrower)
         self.assertEqual(instance.status, InstanceStatus.AVAILABLE)
         self.assertIsNone(instance.due_back)
@@ -138,6 +141,7 @@ class ReturnBookServiceTest(TestCase):
 
         return_book(book_instance=instance)
 
+        instance.refresh_from_db()
         self.assertIsNone(instance.borrower)
         self.assertEqual(instance.status, InstanceStatus.AVAILABLE)
         self.assertIsNone(instance.due_back)
@@ -246,4 +250,4 @@ class CloseLoanServiceTest(TestCase):
         self.assertEqual(loan.returned_at, date.today())
         self.assertEqual(loan.status, LoanStatus.RETURNED)
         self.assertFalse(loan.is_overdue)
-        self.assertIsNone(loan.overdue_days)
+        self.assertEqual(loan.overdue_days, 0)

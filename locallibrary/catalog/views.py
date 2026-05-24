@@ -4,7 +4,7 @@ from common.cache import VersionedCacheListMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import ProtectedError, QuerySet
+from django.db.models import Model, ProtectedError, QuerySet
 from django.forms import Form
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -149,8 +149,8 @@ class UserBorrowedBooksListView(LoginRequiredMixin, VersionedCacheListMixin, Lis
     template_name = "catalog/bookinstance_list_borrowed_user.html"
     paginate_by = 10
 
-    def get_cache_prefix(self) -> str:
-        base_prefix = super().get_cache_prefix()
+    def get_cache_prefix(self, model: Model) -> str:
+        base_prefix = super().get_cache_prefix(model)
 
         return f"{base_prefix}_user_{self.request.user.id}"
 

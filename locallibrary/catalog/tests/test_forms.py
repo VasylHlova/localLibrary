@@ -13,31 +13,35 @@ from catalog.forms import (
 
 
 class ChangeBookInstanceDueBackBaseFormTest(TestCase):
+    class DummyForm(ChangeBookInstanceDueBackBaseForm):
+        def get_status(self):
+            return InstanceStatus.ON_LOAN
+
     def test_no_date_is_invalid(self):
-        form = ChangeBookInstanceDueBackBaseForm(data={"due_back": None})
+        form = self.DummyForm(data={"due_back": None})
         self.assertFalse(form.is_valid())
 
     def test_past_date_is_invalid(self):
         past_date = datetime.date.today() - datetime.timedelta(days=1)
-        form = ChangeBookInstanceDueBackBaseForm(data={"due_back": past_date})
+        form = self.DummyForm(data={"due_back": past_date})
         self.assertFalse(form.is_valid())
         self.assertIn("due_back", form.errors)
         self.assertEqual(form.errors["due_back"][0], "Invalid date - renewal in past!")
 
     def test_date_too_far_in_future_is_invalid(self):
         too_far = datetime.date.today() + datetime.timedelta(weeks=4) + datetime.timedelta(days=1)
-        form = ChangeBookInstanceDueBackBaseForm(data={"due_back": too_far})
+        form = self.DummyForm(data={"due_back": too_far})
         self.assertFalse(form.is_valid())
         self.assertIn("due_back", form.errors)
         self.assertEqual(form.errors["due_back"][0], "Invalid date - renewal more than 4 weeks ahead!")
 
     def test_today_is_valid(self):
-        form = ChangeBookInstanceDueBackBaseForm(data={"due_back": datetime.date.today()})
+        form = self.DummyForm(data={"due_back": datetime.date.today()})
         self.assertTrue(form.is_valid())
 
     def test_max_date_is_valid(self):
         max_date = datetime.date.today() + datetime.timedelta(weeks=4)
-        form = ChangeBookInstanceDueBackBaseForm(data={"due_back": max_date})
+        form = self.DummyForm(data={"due_back": max_date})
         self.assertTrue(form.is_valid())
 
 

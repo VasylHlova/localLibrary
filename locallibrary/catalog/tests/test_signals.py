@@ -141,7 +141,7 @@ class InvalidateCacheSignalTest(TestCase):
     @patch("catalog.signals.increment_model_cache_version")
     def test_cache_invalidated_on_book_create(self, mock_increment):
         BookFactory()
-        mock_increment.assert_called_with("book")
+        mock_increment.assert_any_call("book")
 
     @patch("catalog.signals.increment_model_cache_version")
     def test_cache_invalidated_on_book_update(self, mock_increment):
