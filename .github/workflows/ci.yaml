@@ -1,0 +1,79 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+        ENGINE: django.db.backends.postgresql
+        POSTGRES_DB: test_db
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_password
+        POSTGRES_HOST: localhost 
+        REDIS_URL_CACHE: redis://localhost:6379/0
+        CELERY_BROKER_URL: redis://localhost:6379/0
+        CELERY_RESULT_BACKEND: redis://localhost:6379/0
+        SECRET_KEY: "dummy-key-for-tests"
+        DEBUG: "True"
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run Ruff Format Check
+        run: uv run ruff format --check .
+
+      - name: Run Ruff Linter
+        run: uv run ruff check .
+
+      - name: Run Mypy Type Checking
+        run: uv run mypy locallibrary/
+
+      - name: Run Bandit Security Scan
+        run: uv run bandit -r locallibrary/
+
+      - name: Check Django Migrations
+        run: uv run python locallibrary/manage.py makemigrations --check --dry-run
+
+      - name: Run Tests with Pytest
+        run: uv run pytest

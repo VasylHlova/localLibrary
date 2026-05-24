@@ -60,7 +60,7 @@ services:
       context: .
       dockerfile: Dockerfile
     working_dir: /app/locallibrary
-    command: celery -A infrastructure worker -l info
+    command: celery -A locallibrary worker -l info
     restart: always
     env_file:
       - .env
@@ -75,7 +75,7 @@ services:
       context: .
       dockerfile: Dockerfile
     working_dir: /app/locallibrary
-    command: celery -A infrastructure beat -l info
+    command: celery -A locallibrary beat -l info
     restart: always
     env_file:
       - .env
