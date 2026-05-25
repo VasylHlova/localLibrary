@@ -91,7 +91,11 @@ jobs:
             key: ${{ secrets.DO_SSH_KEY }}
             script: |
                         cd /opt/locallibrary
-                        git pull origin master
+                        if [ ! -d ".git" ]; then
+                                      git clone https://github.com/${{ github.repository }}.git .
+                                    else
+                                      git pull origin master
+                                    fi
                         
                         cat <<EOF > .env.prod
                         DEBUG=False
