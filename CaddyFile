@@ -1,0 +1,3 @@
+locallibrary.me, www.locallibrary.me {
+    reverse_proxy server:8000
+}

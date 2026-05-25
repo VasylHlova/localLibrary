@@ -25,8 +25,6 @@ services:
       context: .
       dockerfile: Dockerfile.prod
     working_dir: /app/locallibrary
-    ports:
-      - "8000:8000"
     env_file:
       - .env.prod
     depends_on:
@@ -35,6 +33,19 @@ services:
     volumes:
       - static_volume_prod:/app/locallibrary/static
       - media_volume_prod:/app/locallibrary/media
+
+  caddy:
+      image: caddy:2-alpine
+      restart: always
+      ports:
+        - "80:80"      
+        - "443:443"    
+      volumes:
+        - ./Caddyfile:/etc/caddy/Caddyfile
+        - caddy_data:/data
+        - caddy_config:/config
+      depends_on:
+        - server
 
   celery_worker:
     build:
@@ -70,3 +81,5 @@ volumes:
   postgres_data_prod:
   static_volume_prod:
   media_volume_prod:
+  caddy_data:     
+  caddy_config:
