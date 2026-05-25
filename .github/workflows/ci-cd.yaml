@@ -95,9 +95,6 @@ jobs:
                         
                         cat <<EOF > .env.prod
                         DEBUG=False
-                        SITE_URL=https://locallibrary.me
-                        ALLOWED_HOSTS=locallibrary.me,www.locallibrary.me
-                        CSRF_TRUSTED_ORIGINS=https://locallibrary.me,https://www.locallibrary.me
                         ENGINE=django.db.backends.postgresql
                         POSTGRES_HOST=prod_db
                         REDIS_URL_CACHE=redis://redis:6379/1
@@ -112,6 +109,7 @@ jobs:
                         GOOGLE_CLIENT=${{ vars.GOOGLE_CLIENT }}
                         GITHUB_CLIENT=${{ vars.MY_GITHUB_CLIENT }}
                         EMAIL_HOST_USER=${{ vars.EMAIL_HOST_USER }}
+                        SITE_URL=${{ vars.SITE_URL }}
                         ALLOWED_HOSTS=${{ vars.ALLOWED_HOSTS }}
                         CSRF_TRUSTED_ORIGINS=${{ vars.CSRF_TRUSTED_ORIGINS }}
                         
