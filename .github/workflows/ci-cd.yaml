@@ -89,6 +89,7 @@ jobs:
             host: ${{ vars.DO_HOST }}        
             username: ${{ vars.DO_USERNAME }}
             key: ${{ secrets.DO_SSH_KEY }}
+            command_timeout: "60m"
             script: |
                         cd /opt/locallibrary
                         if [ ! -d ".git" ]; then
