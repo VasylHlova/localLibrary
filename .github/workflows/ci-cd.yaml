@@ -86,8 +86,8 @@ jobs:
         - name: Deploy to DigitalOcean
           uses: appleboy/ssh-action@v1.0.3
           with:
-            host: ${{ secrets.DO_HOST }}
-            username: ${{ secrets.DO_USERNAME }}
+            host: ${{ vars.DO_HOST }}        
+            username: ${{ vars.DO_USERNAME }}
             key: ${{ secrets.DO_SSH_KEY }}
             script: |
                         cd /opt/locallibrary
