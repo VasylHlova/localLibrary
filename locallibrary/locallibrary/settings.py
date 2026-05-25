@@ -326,6 +326,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {"anon": "100/day", "user": "1000/day"},
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # drf-spectacular
@@ -333,5 +334,8 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "LocalLibrary API",
     "DESCRIPTION": "REST API for the LocalLibrary project.",
     "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,  # exclude the schema endpoint itself from the schema
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "withCredentials": True,
+    },
 }

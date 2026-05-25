@@ -3,6 +3,7 @@ from common.mixins import MultiPermissionMixin, MultiSerializerMixin
 from common.permissions import StrictDjangoModelPermissions
 from django.contrib.auth.models import AnonymousUser
 from django.db.models import ProtectedError, Q, QuerySet
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
@@ -54,6 +55,7 @@ def get_book_instance_queryset(user: CustomUser | AnonymousUser) -> "QuerySet[Bo
     )
 
 
+@extend_schema(tags=["Genre"])
 class GenreViewSet(DRFVersionedCacheListMixin, ModelViewSet):
     queryset = Genre.objects.all().order_by("id")
     serializer_class = GenreSerializer
@@ -61,12 +63,14 @@ class GenreViewSet(DRFVersionedCacheListMixin, ModelViewSet):
     filterset_fields = ["name"]
 
 
+@extend_schema(tags=["Language"])
 class LanguageViewSet(DRFVersionedCacheListMixin, ModelViewSet):
     queryset = Language.objects.all().order_by("id")
     serializer_class = LanguageSerializer
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
 
 
+@extend_schema(tags=["Author"])
 class AuthorViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet):
     queryset = Author.objects.all().order_by("id")
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
@@ -88,6 +92,7 @@ class AuthorViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewS
             )
 
 
+@extend_schema(tags=["Book"])
 class BookViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet):
     queryset = Book.objects.all().order_by("title", "id")
 
@@ -118,6 +123,7 @@ class BookViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ModelViewSet
             )
 
 
+@extend_schema(tags=["Loan"])
 class LoanReadViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ReadOnlyModelViewSet):
     queryset = Loan.objects.select_related("borrower", "book_instance").order_by("id")
     permission_classes = [StrictDjangoModelPermissions]
@@ -129,6 +135,7 @@ class LoanReadViewSet(DRFVersionedCacheListMixin, MultiSerializerMixin, ReadOnly
     }
 
 
+@extend_schema(tags=["BookInstance"])
 class BookInstanceViewSet(
     DRFUserVersionedCacheListMixin, MultiPermissionMixin, MultiSerializerMixin, ModelViewSet
 ):
@@ -177,6 +184,7 @@ class BookInstanceViewSet(
         return Response(serializer.data)
 
 
+@extend_schema(tags=["BookAction"])
 class BookActionViewSet(GenericViewSet):
     queryset = BookInstance.objects.none()
     permission_classes = [IsAuthenticated]
@@ -187,6 +195,7 @@ class BookActionViewSet(GenericViewSet):
         user = cast(CustomUser, self.request.user)
         return get_book_instance_queryset(user)
 
+    @extend_schema(request=BorrowOrReserveSerializer, responses=BookInstanceDetailSerializer)
     @action(detail=True, methods=["post"])
     def borrow_or_reserve(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()
@@ -212,6 +221,7 @@ class BookActionViewSet(GenericViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(request=BorrowReservedSerializer, responses=BookInstanceDetailSerializer)
     @action(detail=True, methods=["post"])
     def borrow_reserved(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()
@@ -236,6 +246,7 @@ class BookActionViewSet(GenericViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(request=None, responses=BookInstanceDetailSerializer)
     @action(detail=True, methods=["post"], permission_classes=[CanMarkReturned])
     def return_book(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()
@@ -248,6 +259,7 @@ class BookActionViewSet(GenericViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(request=RenewDueBackSerializer, responses=BookInstanceDetailSerializer)
     @action(detail=True, methods=["patch"], permission_classes=[CanChangeDueBack])
     def extend_loan(self, request: Request, pk: str | None = None) -> Response:
         instance = self.get_object()

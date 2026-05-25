@@ -1,5 +1,6 @@
 from common.mixins import MultiSerializerMixin
 from common.permissions import StrictDjangoModelPermissions
+from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -14,6 +15,7 @@ from user.api.serializers import (
 from user.models import CustomUser, UserProfile
 
 
+@extend_schema(tags=["User"])
 class UserViewSet(MultiSerializerMixin, ReadOnlyModelViewSet):
     queryset = CustomUser.objects.select_related("profile").order_by("id")
     permission_classes = [StrictDjangoModelPermissions]
