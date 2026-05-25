@@ -126,7 +126,6 @@ jobs:
                         EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
                         EOF
                         
-                        docker compose -f compose.prod.yaml up -d --build
-              
-                        docker compose -f compose.prod.yaml exec -T server python locallibrary/manage.py migrate
-                        docker compose -f compose.prod.yaml exec -T server python locallibrary/manage.py collectstatic --noinput
+                        docker compose --env-file .env.prod -f compose.prod.yaml up -d --build
+                        docker compose --env-file .env.prod -f compose.prod.yaml exec -T server python manage.py migrate
+                        docker compose --env-file .env.prod -f compose.prod.yaml exec -T server python manage.py collectstatic --noinput
