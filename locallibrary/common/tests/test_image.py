@@ -38,17 +38,6 @@ def test_generate_path():
     assert path.endswith(".webp")
 
 
-class DummyModel(ImageProcessingMixin):
-    IMAGE_FIELD = "image"
-
-    def __init__(self, image=None):
-        self.image = image
-        super().__init__()
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-
 @patch("common.image.process_image")
 def test_image_processing_mixin_save(mock_process_image):
     mock_process_image.return_value = ContentFile(b"processed", name="processed.webp")
@@ -56,7 +45,6 @@ def test_image_processing_mixin_save(mock_process_image):
     mock_image = MagicMock()
     mock_image.name = "original.jpg"
 
-    DummyModel(image=mock_image)
 
     class BaseModel:
         def save(self, *args, **kwargs):
@@ -69,7 +57,11 @@ def test_image_processing_mixin_save(mock_process_image):
             self.image = image
             super().__init__()
 
-    test_model = TestModel(image=mock_image)
+    old_image = MagicMock()
+    old_image.name = "old.jpg"
+
+    test_model = TestModel(image=old_image)  
+    test_model.image = mock_image              
     test_model.save()
 
     mock_process_image.assert_called_once_with(mock_image, max_size=(800, 800))

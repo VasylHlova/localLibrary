@@ -11,8 +11,8 @@
                 <div class="col">
                     <div class="card bg-light h-100 shadow-sm border-0">
                         <div class="card-body">
-                            {% if author.photo %}
-                                <img src="{{ author.photo.url }}" alt="{{ author.first_name }}" class="img-thumbnail">
+                            {% if author.image %}
+                                <img src="{{ author.image.url }}" alt="{{ author.first_name }}" class="img-thumbnail">
                             {% else %}
                                 <img src="{% static 'catalog/img/no_photo.png' %}" alt="dafault photo" class="img-thumbnail">
                             {% endif %}

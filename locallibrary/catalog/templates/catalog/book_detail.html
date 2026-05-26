@@ -8,8 +8,8 @@
     </div>
 
     <div class="card-body">
-        {% if book.photo %}
-            <img src="{{ book.photo.url }}" alt="{{ book.title }}" class="img-thumbnail">
+        {% if book.image %}
+            <img src="{{ book.image.url }}" alt="{{ book.title }}" class="img-thumbnail">
         {% else %}
             <img src="{% static 'catalog/img/no_photo.png' %}" alt="dafault photo" class="img-thumbnail">
         {% endif %}

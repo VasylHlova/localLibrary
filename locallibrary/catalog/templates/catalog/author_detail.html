@@ -6,8 +6,8 @@
     <div class="card-body">
         <h1 class="card-title">{{ author.first_name }} {{ author.last_name }}</h1>
 
-        {% if author.photo %}
-            <img src="{{ author.photo.url }}" alt="{{ author.first_name }}">
+        {% if author.image %}
+            <img src="{{ author.image.url }}" alt="{{ author.first_name }}">
         {% else %}
             <img src="{% static 'catalog/img/no_photo.png' %}" alt="dafault photo">
         {% endif %}

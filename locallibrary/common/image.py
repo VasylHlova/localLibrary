@@ -23,7 +23,8 @@ class ImageProcessingMixin:
     def save(self, *args, **kwargs):
         field_name = self.IMAGE_FIELD
         image_field = getattr(self, field_name, None)
-        if image_field:
+
+        if image_field and image_field.name != self._original_image:
             size = getattr(self, "IMAGE_SIZE", (800, 800))
             processed = process_image(image_field, max_size=size)
             if processed:
@@ -64,7 +65,11 @@ def process_image(image: File, max_size: tuple[int, int] = (800, 800)) -> File |
         img.save(output, format="WEBP", quality=85, optimize=True)
         output.seek(0)
 
-        return ContentFile(output.read())
+        processed_file = ContentFile(output.read())
+        processed_file.content_type = "image/webp"
+        processed_file.name = "image.webp"
+
+        return processed_file
 
     except Exception:
         logger.exception(

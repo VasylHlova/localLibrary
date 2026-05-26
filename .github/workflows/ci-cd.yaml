@@ -26,23 +26,23 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
 
     env:
-        ENGINE: django.db.backends.postgresql
-        POSTGRES_DB: test_db
-        POSTGRES_USER: test_user
-        POSTGRES_PASSWORD: test_password
-        POSTGRES_HOST: localhost 
-        REDIS_URL_CACHE: redis://localhost:6379/0
-        CELERY_BROKER_URL: redis://localhost:6379/0
-        CELERY_RESULT_BACKEND: redis://localhost:6379/0
-        SECRET_KEY: "dummy-key-for-tests"
-        DEBUG: "True"
+      ENGINE: django.db.backends.postgresql
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_HOST: localhost
+      REDIS_URL_CACHE: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      CELERY_RESULT_BACKEND: redis://localhost:6379/0
+      SECRET_KEY: "dummy-key-for-tests"
+      DEBUG: "True"
 
     steps:
       - name: Check out the repository
@@ -79,54 +79,55 @@ jobs:
         run: uv run pytest
 
   deploy:
-      needs: check-and-test
-      if: github.ref == 'refs/heads/master'
-      runs-on: ubuntu-latest
-      steps:
-        - name: Deploy to DigitalOcean
-          uses: appleboy/ssh-action@v1.0.3
-          with:
-            host: ${{ vars.DO_HOST }}        
-            username: ${{ vars.DO_USERNAME }}
-            key: ${{ secrets.DO_SSH_KEY }}
-            command_timeout: "60m"
-            script: |
-                        cd /opt/locallibrary
-                        if [ ! -d ".git" ]; then
-                                      git clone https://github.com/${{ github.repository }}.git .
-                                    else
-                                      git pull origin master
-                                    fi
-                        
-                        cat <<EOF > .env.prod
-                        DEBUG=False
-                        ENGINE=django.db.backends.postgresql
-                        POSTGRES_HOST=prod_db
-                        REDIS_URL_CACHE=redis://redis:6379/1
-                        CELERY_BROKER_URL=redis://redis:6379/2
-                        CELERY_RESULT_BACKEND=redis://redis:6379/3
-                        
-                        POSTGRES_DB=${{ vars.POSTGRES_DB }}
-                        POSTGRES_USER=${{ vars.POSTGRES_USER }}
-                        CLOUDFLARE_R2_BUCKET=${{ vars.CLOUDFLARE_R2_BUCKET }}
-                        CLOUDFLARE_R2_BUCKET_ENDPOINT=${{ vars.CLOUDFLARE_R2_BUCKET_ENDPOINT }}
-                        CLOUDFLARE_R2_DOMAIN=${{ vars.CLOUDFLARE_R2_DOMAIN }}
-                        GOOGLE_CLIENT=${{ vars.GOOGLE_CLIENT }}
-                        GITHUB_CLIENT=${{ vars.MY_GITHUB_CLIENT }}
-                        EMAIL_HOST_USER=${{ vars.EMAIL_HOST_USER }}
-                        SITE_URL=${{ vars.SITE_URL }}
-                        ALLOWED_HOSTS=${{ vars.ALLOWED_HOSTS }}
-                        CSRF_TRUSTED_ORIGINS=${{ vars.CSRF_TRUSTED_ORIGINS }}
-                        
-                        SECRET_KEY=${{ secrets.SECRET_KEY }}
-                        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-                        CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
-                        CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
-                        GOOGLE_SECRET=${{ secrets.GOOGLE_SECRET }}
-                        GITHUB_SECRET=${{ secrets.MY_GITHUB_SECRET }}
-                        EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
-                        EOF
-                        
-                        docker compose --env-file .env.prod -f compose.prod.yaml up -d --build
-                        docker compose --env-file .env.prod -f compose.prod.yaml exec -T server python manage.py migrate
-                        docker compose --env-file .env.prod -f compose.prod.yaml exec -T server python manage.py collectstatic --noinput
+    needs: check-and-test
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to DigitalOcean
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DO_HOST }}
+          username: ${{ vars.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          command_timeout: "60m"
+          script: |
+            cd /opt/locallibrary
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/${{ github.repository }}.git .
+            else
+              git pull origin master
+            fi
+
+            cat > .env << 'EOF'
+            DEBUG=False
+            ENGINE=django.db.backends.postgresql
+            POSTGRES_HOST=prod_db
+            REDIS_URL_CACHE=redis://redis:6379/1
+            CELERY_BROKER_URL=redis://redis:6379/2
+            CELERY_RESULT_BACKEND=redis://redis:6379/3
+            EOF
+
+            cat >> .env << EOF
+            POSTGRES_DB=${{ vars.POSTGRES_DB }}
+            POSTGRES_USER=${{ vars.POSTGRES_USER }}
+            CLOUDFLARE_R2_BUCKET=${{ vars.CLOUDFLARE_R2_BUCKET }}
+            CLOUDFLARE_R2_BUCKET_ENDPOINT=${{ vars.CLOUDFLARE_R2_BUCKET_ENDPOINT }}
+            CLOUDFLARE_R2_DOMAIN=${{ vars.CLOUDFLARE_R2_DOMAIN }}
+            GOOGLE_CLIENT=${{ vars.GOOGLE_CLIENT }}
+            GITHUB_CLIENT=${{ vars.MY_GITHUB_CLIENT }}
+            EMAIL_HOST_USER=${{ vars.EMAIL_HOST_USER }}
+            SITE_URL=${{ vars.SITE_URL }}
+            ALLOWED_HOSTS=${{ vars.ALLOWED_HOSTS }}
+            CSRF_TRUSTED_ORIGINS=${{ vars.CSRF_TRUSTED_ORIGINS }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
+            CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
+            GOOGLE_SECRET=${{ secrets.GOOGLE_SECRET }}
+            GITHUB_SECRET=${{ secrets.MY_GITHUB_SECRET }}
+            EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
+            EOF
+
+            docker compose --env-file .env -f compose.prod.yaml up -d --build
+            docker compose --env-file .env -f compose.prod.yaml exec -T server python manage.py migrate
+            docker compose --env-file .env -f compose.prod.yaml exec -T server python manage.py collectstatic --noinput
