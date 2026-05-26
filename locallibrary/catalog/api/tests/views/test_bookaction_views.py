@@ -18,7 +18,7 @@ pytestmark = pytest.mark.django_db
 
 
 class TestBookActionBorrowOrReserveIntegration:
-    def test_anonymous_forbidden(self, api_client):
+    def test_anonymous_returns_401(self, api_client):
         instance = AvailableBookInstanceFactory()
         response = api_client.post(
             reverse("api-instance-action-borrow-or-reserve", args=[instance.pk]),
@@ -90,7 +90,7 @@ class TestBookActionBorrowOrReserveUnit:
 
 
 class TestBookActionBorrowReservedIntegration:
-    def test_anonymous_forbidden(self, api_client):
+    def test_anonymous_returns_401(self, api_client):
         instance = ReservedBookInstanceFactory()
         response = api_client.post(
             reverse("api-instance-action-borrow-reserved", args=[instance.pk]),
@@ -139,7 +139,7 @@ class TestBookActionBorrowReservedUnit:
 
 
 class TestBookActionReturnBookIntegration:
-    def test_anonymous_forbidden(self, api_client):
+    def test_anonymous_returns_401(self, api_client):
         instance = OnLoanBookInstanceFactory()
         response = api_client.post(
             reverse("api-instance-action-return-book", args=[instance.pk]),
@@ -181,7 +181,7 @@ class TestBookActionReturnBookUnit:
 
 
 class TestBookActionExtendLoanIntegration:
-    def test_anonymous_forbidden(self, api_client):
+    def test_anonymous_returns_401(self, api_client):
         instance = OnLoanBookInstanceFactory()
         response = api_client.patch(
             reverse("api-instance-action-extend-loan", args=[instance.pk]),

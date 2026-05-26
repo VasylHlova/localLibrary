@@ -9,19 +9,19 @@ pytestmark = pytest.mark.django_db
 
 
 class TestGenreViewSet:
-    def test_list_anonymous(self, api_client):
+    def test_list_anonymous_returns_200(self, api_client):
         GenreFactory.create_batch(3)
         response = api_client.get(reverse("api-genre-list"))
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 3
 
-    def test_retrieve(self, api_client):
+    def test_retrieve_returns_200_and_correct_name(self, api_client):
         genre = GenreFactory()
         response = api_client.get(reverse("api-genre-detail", args=[genre.pk]))
         assert response.status_code == status.HTTP_200_OK
         assert response.data["name"] == genre.name
 
-    def test_create_anonymous_forbidden(self, api_client):
+    def test_create_anonymous_returns_401(self, api_client):
         response = api_client.post(reverse("api-genre-list"), {"name": "Horror"})
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 

@@ -339,5 +339,14 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SWAGGER_UI_SETTINGS": {
         "withCredentials": True,
+        "requestInterceptor": (
+            "function(request) {"
+            "  var csrfCookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));"
+            "  if (csrfCookie) {"
+            "    request.headers['X-CSRFToken'] = csrfCookie.split('=')[1];"
+            "  }"
+            "  return request;"
+            "}"
+        ),
     },
 }

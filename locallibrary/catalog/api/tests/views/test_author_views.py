@@ -28,7 +28,7 @@ class TestAuthorViewSet:
         )
         assert response.status_code == status.HTTP_201_CREATED
 
-    def test_create_anonymous_forbidden(self, api_client):
+    def test_create_anonymous_returns_401(self, api_client):
         response = api_client.post(
             reverse("api-author-list"),
             {"first_name": "Jane", "last_name": "Doe"},

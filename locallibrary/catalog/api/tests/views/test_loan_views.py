@@ -14,7 +14,7 @@ class TestLoanReadViewSet:
         response = api_client.get(reverse("api-loan-list"))
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_list_anonymous_forbidden(self, api_client):
+    def test_list_anonymous_returns_401(self, api_client):
         response = api_client.get(reverse("api-loan-list"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 

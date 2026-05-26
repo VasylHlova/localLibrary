@@ -6,7 +6,11 @@ from django.db.models import ProtectedError, Q, QuerySet
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly, IsAuthenticated
+from rest_framework.permissions import (
+    DjangoModelPermissionsOrAnonReadOnly,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, ReadOnlyModelViewSet
@@ -152,6 +156,8 @@ class BookInstanceViewSet(
     }
 
     permission_classes_by_action = {
+        "list": [IsAuthenticatedOrReadOnly],
+        "retrieve": [IsAuthenticatedOrReadOnly],
         "partial_update": [CanChangeStatus],
         "my": [IsAuthenticated],
     }

@@ -14,13 +14,13 @@ pytestmark = pytest.mark.django_db
 
 
 class TestBookViewSet:
-    def test_list_anonymous(self, api_client):
+    def test_list_anonymous_returns_200(self, api_client):
         BookFactory.create_batch(3)
         response = api_client.get(reverse("api-book-list"))
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 3
 
-    def test_retrieve_anonymous(self, api_client):
+    def test_retrieve_anonymous_returns_200(self, api_client):
         book = BookFactory()
         response = api_client.get(reverse("api-book-detail", args=[book.pk]))
         assert response.status_code == status.HTTP_200_OK
@@ -53,7 +53,7 @@ class TestBookViewSet:
         response = api_client.post(reverse("api-book-list"), payload, format="json")
         assert response.status_code == status.HTTP_201_CREATED
 
-    def test_create_anonymous_forbidden(self, api_client):
+    def test_create_anonymous_returns_401(self, api_client):
         response = api_client.post(reverse("api-book-list"), {})
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
