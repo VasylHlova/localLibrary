@@ -12,7 +12,6 @@ from catalog.models import BookInstance, Loan
 def borrow_or_reserve_book(
     book_instance: BookInstance, user: CustomUser, due_back: date, status: str
 ) -> None:
-
     locked_instance = BookInstance.objects.get_locked(pk=book_instance.pk)
 
     if status not in [InstanceStatus.ON_LOAN, InstanceStatus.RESERVED]:

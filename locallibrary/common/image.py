@@ -66,7 +66,6 @@ def process_image(image: File, max_size: tuple[int, int] = (800, 800)) -> File |
         output.seek(0)
 
         processed_file = ContentFile(output.read())
-        processed_file.content_type = "image/webp"
         processed_file.name = "image.webp"
 
         return processed_file
