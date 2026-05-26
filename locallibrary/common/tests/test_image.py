@@ -45,7 +45,6 @@ def test_image_processing_mixin_save(mock_process_image):
     mock_image = MagicMock()
     mock_image.name = "original.jpg"
 
-
     class BaseModel:
         def save(self, *args, **kwargs):
             pass
@@ -60,8 +59,8 @@ def test_image_processing_mixin_save(mock_process_image):
     old_image = MagicMock()
     old_image.name = "old.jpg"
 
-    test_model = TestModel(image=old_image)  
-    test_model.image = mock_image              
+    test_model = TestModel(image=old_image)
+    test_model.image = mock_image
     test_model.save()
 
     mock_process_image.assert_called_once_with(mock_image, max_size=(800, 800))
